@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Urban Combat TPS</title>
+  <title>Urban Combat TPS - Village Battle</title>
   <style>
     body { margin: 0; overflow: hidden; background: black; font-family: sans-serif; }
     
@@ -68,19 +68,109 @@
       0% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-30px); }
     }
+    
+    /* Boss Health Bar */
+    #boss-health-container {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      height: 30px;
+      border: 3px solid #ff0000;
+      background-color: #330000;
+      display: none;
+      z-index: 100;
+    }
+    
+    #boss-health {
+      width: 100%;
+      height: 100%;
+      background-color: #ff0000;
+      transition: width 0.3s ease;
+    }
+    
+    #boss-name {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ff0000;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000;
+      display: none;
+      z-index: 100;
+    }
+    
+    /* Enemy Counter */
+    #enemy-counter {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      color: white;
+      font-size: 18px;
+      z-index: 100;
+    }
+    
+    /* Medikit Counter */
+    #medikit-counter {
+      position: absolute;
+      top: 40px;
+      right: 20px;
+      color: #00ff00;
+      font-size: 18px;
+      z-index: 100;
+    }
+    
+    /* Medikit Pickup Notification */
+    .medikit-notification {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00ff00;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000;
+      pointer-events: none;
+      animation: medikitPulse 2s ease-out forwards;
+      z-index: 150;
+    }
+    
+    @keyframes medikitPulse {
+      0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+    }
+    
+    /* Loading Screen */
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      color: white;
+      font-size: 24px;
+    }
   </style>
 </head>
 <body>
 
 <!-- Menu Screen -->
 <div id="menu-screen">
-  <h1 id="menu-title">URBAN COMBAT</h1>
+  <h1 id="menu-title">VILLAGE COMBAT</h1>
   <button id="start-button">CLICK TO PLAY</button>
 </div>
 
 <!-- Game Screen -->
 <div id="game-screen">
-  <div id="instructions">WASD to move, Mouse to look, Click to shoot</div>
+  <div id="instructions">WASD to move, Mouse to look, Click to shoot, 1-3 to switch weapons, E to use medikit</div>
   <div id="crosshair">+</div>
   <div id="hud">
     <div>Health</div>
@@ -89,9 +179,18 @@
     <div id="score-display">Score: 0</div>
     <div id="combo-display">Combo: x1</div>
   </div>
+  <div id="enemy-counter">Enemies: 0</div>
+  <div id="medikit-counter">Medikits: 0</div>
   <div id="game-over">GAME OVER</div>
   <div id="final-score">Final Score: 0</div>
 </div>
+
+<!-- Boss Elements -->
+<div id="boss-name">DEMON KING</div>
+<div id="boss-health-container"><div id="boss-health"></div></div>
+
+<!-- Loading Screen -->
+<div id="loading-screen">LOADING...</div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
 
@@ -103,12 +202,14 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 const menuScreen = document.getElementById('menu-screen');
 const gameScreen = document.getElementById('game-screen');
 const startButton = document.getElementById('start-button');
+const loadingScreen = document.getElementById('loading-screen');
 
 startButton.addEventListener('click', () => {
   menuScreen.style.opacity = '0';
   setTimeout(() => {
     menuScreen.style.display = 'none';
     gameScreen.style.display = 'block';
+    loadingScreen.style.display = 'flex';
     initGame();
   }, 500);
 });
@@ -118,106 +219,1263 @@ function initGame() {
   // --- SCENE SETUP ---
   const scene = new THREE.Scene(); 
   scene.background = new THREE.Color(0x87ceeb); 
-  scene.fog = new THREE.Fog(0x87ceeb, 20, 200);
+  scene.fog = new THREE.FogExp2(0x87ceeb, 0.001);
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); 
   camera.position.set(0, 2.5, 30);
-  const renderer = new THREE.WebGLRenderer({ antialias: true }); 
+  
+  // Enhanced renderer settings
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
   renderer.setSize(window.innerWidth, window.innerHeight); 
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true; 
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = true;
+  // Fixed: Use outputColorSpace instead of deprecated outputEncoding
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.5;
+  renderer.physicallyCorrectLights = true;
   document.body.appendChild(renderer.domElement);
 
-  // --- GUN MODEL ---
-  function createGunModel() { 
-    const gun = new THREE.Group(); 
-    const gunMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7, roughness: 0.3 }); 
-    const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1), gunMaterial); 
-    barrel.position.z = 0.5; 
-    gun.add(barrel); 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.7), gunMaterial); 
-    body.position.z = 0.1; 
-    gun.add(body); 
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.2), gunMaterial); 
-    grip.position.set(0, -0.3, -0.1); 
-    gun.add(grip); 
-    return gun; 
+  // --- ADVANCED LIGHTING ---
+  const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  sunLight.position.set(50, 100, 50);
+  sunLight.castShadow = true;
+  sunLight.shadow.camera.left = -100;
+  sunLight.shadow.camera.right = 100;
+  sunLight.shadow.camera.top = 100;
+  sunLight.shadow.camera.bottom = -100;
+  sunLight.shadow.mapSize.width = 2048;
+  sunLight.shadow.mapSize.height = 2048;
+  sunLight.shadow.bias = -0.001;
+  sunLight.shadow.camera.near = 0.5;
+  sunLight.shadow.camera.far = 500;
+  scene.add(sunLight);
+
+  const ambientLight = new THREE.AmbientLight(0x7d8a9e, 0.3);
+  scene.add(ambientLight);
+
+  const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x654321, 0.5);
+  scene.add(hemisphereLight);
+
+  const pointLight1 = new THREE.PointLight(0xff9500, 1, 30);
+  pointLight1.position.set(10, 10, 10);
+  pointLight1.castShadow = true;
+  scene.add(pointLight1);
+
+  const pointLight2 = new THREE.PointLight(0x0099ff, 1, 30);
+  pointLight2.position.set(-10, 10, -10);
+  pointLight2.castShadow = true;
+  scene.add(pointLight2);
+
+  // --- ENHANCED MATERIALS ---
+  function createPBRMaterial(options) {
+    const material = new THREE.MeshStandardMaterial({
+      color: options.color || 0xffffff,
+      roughness: options.roughness || 0.5,
+      metalness: options.metalness || 0.0,
+      map: options.map || null,
+      normalMap: options.normalMap || null,
+      roughnessMap: options.roughnessMap || null,
+      metalnessMap: options.metalnessMap || null,
+      aoMap: options.aoMap || null,
+      envMapIntensity: options.envMapIntensity || 1.0
+    });
+    return material;
   }
 
-  // --- PLAYER MODEL & CONTROLS ---
-  const playerModel = createPlayerModel(); 
-  scene.add(playerModel);
-  const controls = new PointerLockControls(camera, document.body);
+  // --- MEDIKIT MODEL ---
+  function createMedikitModel() {
+    const model = new THREE.Group();
+    
+    // Main medikit box
+    const boxGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.2);
+    const boxMaterial = createPBRMaterial({ color: 0xffffff, roughness: 0.3 });
+    const box = new THREE.Mesh(boxGeometry, boxMaterial);
+    model.add(box);
+    
+    // Red cross on top
+    const crossVerticalGeometry = new THREE.BoxGeometry(0.05, 0.2, 0.05);
+    const crossMaterial = createPBRMaterial({ color: 0xff0000, roughness: 0.2, emissive: 0xff0000, emissiveIntensity: 0.3 });
+    const crossVertical = new THREE.Mesh(crossVerticalGeometry, crossMaterial);
+    crossVertical.position.y = 0.05;
+    model.add(crossVertical);
+    
+    const crossHorizontalGeometry = new THREE.BoxGeometry(0.2, 0.05, 0.05);
+    const crossHorizontal = new THREE.Mesh(crossHorizontalGeometry, crossMaterial);
+    crossHorizontal.position.y = 0.05;
+    model.add(crossHorizontal);
+    
+    // Add glowing effect
+    const glowLight = new THREE.PointLight(0x00ff00, 0.5, 5);
+    model.add(glowLight);
+    
+    // Animation properties
+    model.floatOffset = Math.random() * Math.PI * 2;
+    model.rotationSpeed = 0.01 + Math.random() * 0.02;
+    
+    return model;
+  }
+
+  // --- RETRO-STYLE CHARACTER MODEL (Based on the image) ---
+  function createRetroStylePlayerModel() {
+    const model = new THREE.Group();
+    
+    // Materials for different body parts
+    const skinMaterial = createPBRMaterial({ color: 0xfdbcb4, roughness: 0.7 });
+    const hairMaterial = createPBRMaterial({ color: 0x2c1810, roughness: 0.8 });
+    
+    // Plaid pattern material for coat
+    const plaidTexture = new THREE.DataTexture(
+      new Uint8Array([
+        255, 0, 0, 255, 0, 255, 0, 255, 255, 0, 0, 255,
+        0, 255, 0, 255, 255, 0, 0, 255, 0, 255, 0, 255,
+        255, 0, 0, 255, 0, 255, 0, 255, 255, 0, 0, 255,
+        0, 255, 0, 255, 255, 0, 0, 255, 0, 255, 0, 255
+      ]), 4, 4, THREE.RGBAFormat
+    );
+    plaidTexture.magFilter = THREE.NearestFilter;
+    plaidTexture.wrapS = THREE.RepeatWrapping;
+    plaidTexture.wrapT = THREE.RepeatWrapping;
+    plaidTexture.repeat.set(4, 4);
+    
+    const coatMaterial = createPBRMaterial({ 
+      color: 0x8B0000, 
+      roughness: 0.6,
+      map: plaidTexture
+    });
+    
+    const bowTieMaterial = createPBRMaterial({ color: 0xffffff, roughness: 0.5 });
+    const glovesMaterial = createPBRMaterial({ color: 0xFFD700, roughness: 0.4 });
+    const bagMaterial = createPBRMaterial({ color: 0x8B4513, roughness: 0.6 });
+    const beltMaterial = createPBRMaterial({ color: 0x000000, roughness: 0.5 });
+    
+    // Head with more realistic shape
+    const headGeometry = new THREE.SphereGeometry(0.45, 32, 32);
+    const head = new THREE.Mesh(headGeometry, skinMaterial);
+    head.position.y = 2.5;
+    head.scale.set(1, 1.1, 0.9);
+    model.add(head);
+    
+    // Hair
+    const hairGeometry = new THREE.SphereGeometry(0.48, 16, 16);
+    hairGeometry.scale(1, 0.6, 1.1);
+    const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+    hair.position.y = 2.75;
+    model.add(hair);
+    
+    // Neck
+    const neckGeometry = new THREE.CylinderGeometry(0.2, 0.22, 0.3, 16);
+    const neck = new THREE.Mesh(neckGeometry, skinMaterial);
+    neck.position.y = 2.1;
+    model.add(neck);
+    
+    // Torso with shirt
+    const torsoGeometry = new THREE.BoxGeometry(0.8, 1.2, 0.4);
+    const torso = new THREE.Mesh(torsoGeometry, createPBRMaterial({ color: 0xffffff, roughness: 0.7 }));
+    torso.position.y = 1.5;
+    model.add(torso);
+    
+    // Plaid coat
+    const coatGeometry = new THREE.BoxGeometry(0.9, 1.3, 0.45);
+    const coat = new THREE.Mesh(coatGeometry, coatMaterial);
+    coat.position.y = 1.5;
+    model.add(coat);
+    
+    // White bow tie
+    const bowTieGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.1);
+    const bowTie = new THREE.Mesh(bowTieGeometry, bowTieMaterial);
+    bowTie.position.set(0, 2.1, 0.25);
+    model.add(bowTie);
+    
+    // Belt
+    const beltGeometry = new THREE.BoxGeometry(0.85, 0.1, 0.5);
+    const belt = new THREE.Mesh(beltGeometry, beltMaterial);
+    belt.position.y = 1.2;
+    model.add(belt);
+    
+    // Arms with realistic joints
+    const shoulderGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const upperArmGeometry = new THREE.CylinderGeometry(0.12, 0.14, 0.7, 16);
+    const elbowGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+    const lowerArmGeometry = new THREE.CylinderGeometry(0.1, 0.12, 0.6, 16);
+    const handGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    
+    // Left arm
+    const leftShoulder = new THREE.Mesh(shoulderGeometry, skinMaterial);
+    leftShoulder.position.set(-0.45, 2.0, 0);
+    model.add(leftShoulder);
+    
+    const leftUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+    leftUpperArm.position.set(-0.65, 1.7, 0);
+    leftUpperArm.rotation.z = Math.PI / 2;
+    model.add(leftUpperArm);
+    
+    const leftElbow = new THREE.Mesh(elbowGeometry, skinMaterial);
+    leftElbow.position.set(-0.9, 1.3, 0);
+    model.add(leftElbow);
+    
+    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, skinMaterial);
+    leftLowerArm.position.set(-1.1, 1.0, 0);
+    leftLowerArm.rotation.z = Math.PI / 2;
+    model.add(leftLowerArm);
+    
+    const leftHand = new THREE.Mesh(handGeometry, glovesMaterial);
+    leftHand.position.set(-1.3, 0.7, 0);
+    model.add(leftHand);
+    
+    // Right arm
+    const rightShoulder = new THREE.Mesh(shoulderGeometry, skinMaterial);
+    rightShoulder.position.set(0.45, 2.0, 0);
+    model.add(rightShoulder);
+    
+    const rightUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+    rightUpperArm.position.set(0.65, 1.7, 0);
+    rightUpperArm.rotation.z = Math.PI / 2;
+    model.add(rightUpperArm);
+    
+    const rightElbow = new THREE.Mesh(elbowGeometry, skinMaterial);
+    rightElbow.position.set(0.9, 1.3, 0);
+    model.add(rightElbow);
+    
+    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, skinMaterial);
+    rightLowerArm.position.set(1.1, 1.0, 0);
+    rightLowerArm.rotation.z = Math.PI / 2;
+    model.add(rightLowerArm);
+    
+    const rightHand = new THREE.Mesh(handGeometry, glovesMaterial);
+    rightHand.position.set(1.3, 0.7, 0);
+    model.add(rightHand);
+    
+    // Legs with realistic joints
+    const hipGeometry = new THREE.BoxGeometry(0.6, 0.3, 0.4);
+    const upperLegGeometry = new THREE.CylinderGeometry(0.15, 0.18, 0.8, 16);
+    const kneeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    const lowerLegGeometry = new THREE.CylinderGeometry(0.12, 0.14, 0.7, 16);
+    const footGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.6);
+    
+    // Hips
+    const hips = new THREE.Mesh(hipGeometry, createPBRMaterial({ color: 0x333333, roughness: 0.7 }));
+    hips.position.y = 0.9;
+    model.add(hips);
+    
+    // Left leg
+    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, createPBRMaterial({ color: 0x333333, roughness: 0.7 }));
+    leftUpperLeg.position.set(-0.2, 0.5, 0);
+    model.add(leftUpperLeg);
+    
+    const leftKnee = new THREE.Mesh(kneeGeometry, skinMaterial);
+    leftKnee.position.set(-0.2, 0.1, 0);
+    model.add(leftKnee);
+    
+    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, createPBRMaterial({ color: 0x333333, roughness: 0.7 }));
+    leftLowerLeg.position.set(-0.2, -0.3, 0);
+    model.add(leftLowerLeg);
+    
+    const leftFoot = new THREE.Mesh(footGeometry, createPBRMaterial({ color: 0x222222, roughness: 0.6 }));
+    leftFoot.position.set(-0.2, -0.7, 0.1);
+    model.add(leftFoot);
+    
+    // Right leg
+    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, createPBRMaterial({ color: 0x333333, roughness: 0.7 }));
+    rightUpperLeg.position.set(0.2, 0.5, 0);
+    model.add(rightUpperLeg);
+    
+    const rightKnee = new THREE.Mesh(kneeGeometry, skinMaterial);
+    rightKnee.position.set(0.2, 0.1, 0);
+    model.add(rightKnee);
+    
+    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, createPBRMaterial({ color: 0x333333, roughness: 0.7 }));
+    rightLowerLeg.position.set(0.2, -0.3, 0);
+    model.add(rightLowerLeg);
+    
+    const rightFoot = new THREE.Mesh(footGeometry, createPBRMaterial({ color: 0x222222, roughness: 0.6 }));
+    rightFoot.position.set(0.2, -0.7, 0.1);
+    model.add(rightFoot);
+    
+    // Brown suspenders bag
+    const bagGeometry = new THREE.BoxGeometry(0.4, 0.5, 0.2);
+    const bag = new THREE.Mesh(bagGeometry, bagMaterial);
+    bag.position.set(0.3, 1.3, 0.3);
+    model.add(bag);
+    
+    // Suspenders
+    const suspenderGeometry = new THREE.BoxGeometry(0.05, 0.8, 0.05);
+    const leftSuspender = new THREE.Mesh(suspenderGeometry, bagMaterial);
+    leftSuspender.position.set(-0.2, 1.6, 0.25);
+    leftSuspender.rotation.z = 0.2;
+    model.add(leftSuspender);
+    
+    const rightSuspender = new THREE.Mesh(suspenderGeometry, bagMaterial);
+    rightSuspender.position.set(0.2, 1.6, 0.25);
+    rightSuspender.rotation.z = -0.2;
+    model.add(rightSuspender);
+    
+    // Store animation references
+    model.leftUpperLeg = leftUpperLeg;
+    model.leftLowerLeg = leftLowerLeg;
+    model.rightUpperLeg = rightUpperLeg;
+    model.rightLowerLeg = rightLowerLeg;
+    model.leftUpperArm = leftUpperArm;
+    model.leftLowerArm = leftLowerArm;
+    model.rightUpperArm = rightUpperArm;
+    model.rightLowerArm = rightLowerArm;
+    model.leftHand = leftHand;
+    model.rightHand = rightHand;
+    model.torso = torso;
+    
+    model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } });
+    return model;
+  }
+
+  function createRealisticEnemyModel() {
+    const model = new THREE.Group();
+    
+    // Enemy materials
+    const skinMaterial = createPBRMaterial({ color: 0x8b6b47, roughness: 0.7 });
+    const helmetMaterial = createPBRMaterial({ color: 0x006400, roughness: 0.3, metalness: 0.6 });
+    const armorMaterial = createPBRMaterial({ color: 0x2d5016, roughness: 0.6 });
+    const bootMaterial = createPBRMaterial({ color: 0x1a1a1a, roughness: 0.5 });
+    
+    // Head with realistic shape
+    const headGeometry = new THREE.SphereGeometry(0.45, 32, 32);
+    const head = new THREE.Mesh(headGeometry, skinMaterial);
+    head.position.y = 2.5;
+    head.scale.set(1, 1.1, 0.9);
+    model.add(head);
+    
+    // Helmet
+    const helmetGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+    helmet.position.y = 2.8;
+    helmet.scale.set(1, 0.8, 1.2);
+    model.add(helmet);
+    
+    // Helmet visor
+    const visorGeometry = new THREE.BoxGeometry(0.4, 0.15, 0.1);
+    const visor = new THREE.Mesh(visorGeometry, createPBRMaterial({ color: 0x000000, roughness: 0.2, metalness: 0.8 }));
+    visor.position.set(0, 2.85, 0.25);
+    model.add(visor);
+    
+    // Neck
+    const neckGeometry = new THREE.CylinderGeometry(0.2, 0.22, 0.3, 16);
+    const neck = new THREE.Mesh(neckGeometry, skinMaterial);
+    neck.position.y = 2.1;
+    model.add(neck);
+    
+    // Body armor
+    const bodyGeometry = new THREE.BoxGeometry(0.9, 1.3, 0.4);
+    const body = new THREE.Mesh(bodyGeometry, armorMaterial);
+    body.position.y = 1.5;
+    model.add(body);
+    
+    // Shoulder armor
+    const leftShoulderArmor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.5), armorMaterial);
+    leftShoulderArmor.position.set(-0.6, 2.0, 0);
+    model.add(leftShoulderArmor);
+    
+    const rightShoulderArmor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.5), armorMaterial);
+    rightShoulderArmor.position.set(0.6, 2.0, 0);
+    model.add(rightShoulderArmor);
+    
+    // Arms with armor
+    const upperArmGeometry = new THREE.CylinderGeometry(0.13, 0.15, 0.7, 16);
+    const lowerArmGeometry = new THREE.CylinderGeometry(0.11, 0.13, 0.6, 16);
+    const handGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    
+    // Left arm
+    const leftUpperArm = new THREE.Mesh(upperArmGeometry, armorMaterial);
+    leftUpperArm.position.set(-0.65, 1.7, 0);
+    leftUpperArm.rotation.z = Math.PI / 2;
+    model.add(leftUpperArm);
+    
+    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, armorMaterial);
+    leftLowerArm.position.set(-0.95, 1.3, 0);
+    leftLowerArm.rotation.z = Math.PI / 2;
+    model.add(leftLowerArm);
+    
+    const leftHand = new THREE.Mesh(handGeometry, skinMaterial);
+    leftHand.position.set(-1.2, 1.0, 0);
+    model.add(leftHand);
+    
+    // Right arm
+    const rightUpperArm = new THREE.Mesh(upperArmGeometry, armorMaterial);
+    rightUpperArm.position.set(0.65, 1.7, 0);
+    rightUpperArm.rotation.z = Math.PI / 2;
+    model.add(rightUpperArm);
+    
+    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, armorMaterial);
+    rightLowerArm.position.set(0.95, 1.3, 0);
+    rightLowerArm.rotation.z = Math.PI / 2;
+    model.add(rightLowerArm);
+    
+    const rightHand = new THREE.Mesh(handGeometry, skinMaterial);
+    rightHand.position.set(1.2, 1.0, 0);
+    model.add(rightHand);
+    
+    // Legs with armor
+    const upperLegGeometry = new THREE.CylinderGeometry(0.16, 0.18, 0.8, 16);
+    const lowerLegGeometry = new THREE.CylinderGeometry(0.13, 0.15, 0.7, 16);
+    const footGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.6);
+    
+    // Left leg
+    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, armorMaterial);
+    leftUpperLeg.position.set(-0.25, 0.5, 0);
+    model.add(leftUpperLeg);
+    
+    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, armorMaterial);
+    leftLowerLeg.position.set(-0.25, -0.3, 0);
+    model.add(leftLowerLeg);
+    
+    const leftFoot = new THREE.Mesh(footGeometry, bootMaterial);
+    leftFoot.position.set(-0.25, -0.7, 0.1);
+    model.add(leftFoot);
+    
+    // Right leg
+    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, armorMaterial);
+    rightUpperLeg.position.set(0.25, 0.5, 0);
+    model.add(rightUpperLeg);
+    
+    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, armorMaterial);
+    rightLowerLeg.position.set(0.25, -0.3, 0);
+    model.add(rightLowerLeg);
+    
+    const rightFoot = new THREE.Mesh(footGeometry, bootMaterial);
+    rightFoot.position.set(0.25, -0.7, 0.1);
+    model.add(rightFoot);
+    
+    // Rocket launcher
+    const launcherGeometry = new THREE.BoxGeometry(0.4, 0.3, 1.5);
+    const launcher = new THREE.Mesh(launcherGeometry, createPBRMaterial({ color: 0x222222, roughness: 0.2, metalness: 0.8 }));
+    launcher.position.set(1.0, 1.3, 0.2);
+    launcher.rotation.z = Math.PI / 2;
+    launcher.rotation.x = 0.2;
+    rightLowerArm.add(launcher);
+    
+    // Store animation references
+    model.leftUpperLeg = leftUpperLeg;
+    model.leftLowerLeg = leftLowerLeg;
+    model.rightUpperLeg = rightUpperLeg;
+    model.rightLowerLeg = rightLowerLeg;
+    model.leftUpperArm = leftUpperArm;
+    model.leftLowerArm = leftLowerArm;
+    model.rightUpperArm = rightUpperArm;
+    model.rightLowerArm = rightLowerArm;
+    model.rightHand = rightHand;
+    model.torso = body;
+    
+    model.health = 100;
+    model.maxHealth = 100;
+    model.speed = 0.08;
+    model.fireRate = 1500;
+    model.lastShotTime = 0;
+    model.shootingRange = 35;
+    model.state = 'patrol';
+    model.targetPosition = null;
+    model.lastStateChange = 0;
+    model.coverPosition = null;
+    model.animationTime = 0;
+    model.prevX = 0;
+    model.prevZ = 0;
+    model.walkCycle = 0;
+    model.isBoss = false;
+    model.isMinion = false;
+    
+    model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } });
+    return model;
+  }
+
+  // --- DEMON KING BOSS MODEL ---
+  function createDemonKingModel() {
+    const model = new THREE.Group();
+    
+    // Demon King materials - dark red and black with glowing effects
+    const skinMaterial = createPBRMaterial({ color: 0x4a0000, roughness: 0.7 });
+    const armorMaterial = createPBRMaterial({ color: 0x1a0000, roughness: 0.4, metalness: 0.6 });
+    const crownMaterial = createPBRMaterial({ color: 0xffd700, roughness: 0.2, metalness: 0.9 });
+    const capeMaterial = createPBRMaterial({ color: 0x8b0000, roughness: 0.8 });
+    const eyeMaterial = createPBRMaterial({ color: 0xff0000, roughness: 0.2, emissive: 0xff0000, emissiveIntensity: 0.8 });
+    const hornMaterial = createPBRMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.7 });
+    
+    // Scale factor for demon king (2x bigger than normal enemy)
+    const scale = 2.0;
+    
+    // Head with demonic features
+    const headGeometry = new THREE.BoxGeometry(0.8 * scale, 0.9 * scale, 0.7 * scale);
+    const head = new THREE.Mesh(headGeometry, skinMaterial);
+    head.position.y = 2.8 * scale;
+    model.add(head);
+    
+    // Glowing demonic eyes
+    const leftEyeGeometry = new THREE.SphereGeometry(0.12 * scale, 8, 8);
+    const leftEye = new THREE.Mesh(leftEyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.2 * scale, 2.9 * scale, 0.35 * scale);
+    model.add(leftEye);
+    
+    const rightEyeGeometry = new THREE.SphereGeometry(0.12 * scale, 8, 8);
+    const rightEye = new THREE.Mesh(rightEyeGeometry, eyeMaterial);
+    rightEye.position.set(0.2 * scale, 2.9 * scale, 0.35 * scale);
+    model.add(rightEye);
+    
+    // Demon horns
+    for (let i = 0; i < 2; i++) {
+      const hornGeometry = new THREE.ConeGeometry(0.08 * scale, 0.8 * scale, 6);
+      const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+      horn.position.set((i === 0 ? -0.3 : 0.3) * scale, 3.4 * scale, 0);
+      horn.rotation.z = (i === 0 ? 0.2 : -0.2);
+      model.add(horn);
+    }
+    
+    // Crown
+    const crownGeometry = new THREE.CylinderGeometry(0.6 * scale, 0.7 * scale, 0.2 * scale, 8);
+    const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+    crown.position.y = 3.6 * scale;
+    model.add(crown);
+    
+    // Crown spikes
+    for (let i = 0; i < 8; i++) {
+      const spikeGeometry = new THREE.ConeGeometry(0.05 * scale, 0.3 * scale, 4);
+      const spike = new THREE.Mesh(spikeGeometry, crownMaterial);
+      const angle = (i / 8) * Math.PI * 2;
+      spike.position.set(
+        Math.cos(angle) * 0.6 * scale,
+        3.8 * scale,
+        Math.sin(angle) * 0.6 * scale
+      );
+      model.add(spike);
+    }
+    
+    // Neck
+    const neckGeometry = new THREE.CylinderGeometry(0.3 * scale, 0.35 * scale, 0.4 * scale, 16);
+    const neck = new THREE.Mesh(neckGeometry, skinMaterial);
+    neck.position.y = 2.2 * scale;
+    model.add(neck);
+    
+    // Muscular torso
+    const torsoGeometry = new THREE.BoxGeometry(1.2 * scale, 1.8 * scale, 0.6 * scale);
+    const torso = new THREE.Mesh(torsoGeometry, armorMaterial);
+    torso.position.y = 1.5 * scale;
+    model.add(torso);
+    
+    // Cape
+    const capeGeometry = new THREE.PlaneGeometry(2.0 * scale, 2.5 * scale);
+    const cape = new THREE.Mesh(capeGeometry, capeMaterial);
+    cape.position.set(0, 1.5 * scale, -0.4 * scale);
+    cape.rotation.x = Math.PI / 8;
+    model.add(cape);
+    
+    // Shoulder armor with spikes
+    const leftShoulderArmor = new THREE.Mesh(new THREE.BoxGeometry(0.5 * scale, 0.3 * scale, 0.6 * scale), armorMaterial);
+    leftShoulderArmor.position.set(-0.8 * scale, 2.4 * scale, 0);
+    model.add(leftShoulderArmor);
+    
+    const rightShoulderArmor = new THREE.Mesh(new THREE.BoxGeometry(0.5 * scale, 0.3 * scale, 0.6 * scale), armorMaterial);
+    rightShoulderArmor.position.set(0.8 * scale, 2.4 * scale, 0);
+    model.add(rightShoulderArmor);
+    
+    // Shoulder spikes
+    const leftShoulderSpike = new THREE.Mesh(new THREE.ConeGeometry(0.1 * scale, 0.4 * scale, 4), hornMaterial);
+    leftShoulderSpike.position.set(-0.8 * scale, 2.6 * scale, 0);
+    model.add(leftShoulderSpike);
+    
+    const rightShoulderSpike = new THREE.Mesh(new THREE.ConeGeometry(0.1 * scale, 0.4 * scale, 4), hornMaterial);
+    rightShoulderSpike.position.set(0.8 * scale, 2.6 * scale, 0);
+    model.add(rightShoulderSpike);
+    
+    // Muscular arms
+    const upperArmGeometry = new THREE.CylinderGeometry(0.2 * scale, 0.22 * scale, 0.9 * scale, 16);
+    const lowerArmGeometry = new THREE.CylinderGeometry(0.18 * scale, 0.2 * scale, 0.8 * scale, 16);
+    const handGeometry = new THREE.BoxGeometry(0.3 * scale, 0.2 * scale, 0.5 * scale);
+    
+    // Left arm
+    const leftUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+    leftUpperArm.position.set(-0.9 * scale, 1.8 * scale, 0);
+    leftUpperArm.rotation.z = Math.PI / 2;
+    model.add(leftUpperArm);
+    
+    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, skinMaterial);
+    leftLowerArm.position.set(-1.3 * scale, 1.3 * scale, 0);
+    leftLowerArm.rotation.z = Math.PI / 2;
+    model.add(leftLowerArm);
+    
+    const leftHand = new THREE.Mesh(handGeometry, skinMaterial);
+    leftHand.position.set(-1.6 * scale, 0.9 * scale, 0);
+    model.add(leftHand);
+    
+    // Right arm with weapon
+    const rightUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+    rightUpperArm.position.set(0.9 * scale, 1.8 * scale, 0);
+    rightUpperArm.rotation.z = Math.PI / 2;
+    model.add(rightUpperArm);
+    
+    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, skinMaterial);
+    rightLowerArm.position.set(1.3 * scale, 1.3 * scale, 0);
+    rightLowerArm.rotation.z = Math.PI / 2;
+    model.add(rightLowerArm);
+    
+    const rightHand = new THREE.Mesh(handGeometry, skinMaterial);
+    rightHand.position.set(1.6 * scale, 0.9 * scale, 0);
+    model.add(rightHand);
+    
+    // Demon sword
+    const swordGeometry = new THREE.BoxGeometry(0.15 * scale, 0.3 * scale, 2.5 * scale);
+    const sword = new THREE.Mesh(swordGeometry, createPBRMaterial({ color: 0x444444, roughness: 0.2, metalness: 0.9 }));
+    sword.position.set(1.6 * scale, 1.3 * scale, 0.5 * scale);
+    sword.rotation.x = Math.PI / 2;
+    sword.rotation.z = Math.PI / 4;
+    rightHand.add(sword);
+    
+    // Sword glow effect
+    const swordGlow = new THREE.PointLight(0xff0000, 0.8, 15);
+    sword.add(swordGlow);
+    
+    // Muscular legs
+    const upperLegGeometry = new THREE.CylinderGeometry(0.25 * scale, 0.28 * scale, 1.0 * scale, 16);
+    const lowerLegGeometry = new THREE.CylinderGeometry(0.2 * scale, 0.22 * scale, 0.9 * scale, 16);
+    const footGeometry = new THREE.BoxGeometry(0.4 * scale, 0.2 * scale, 0.8 * scale);
+    
+    // Left leg
+    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, armorMaterial);
+    leftUpperLeg.position.set(-0.4 * scale, 0.6 * scale, 0);
+    model.add(leftUpperLeg);
+    
+    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, armorMaterial);
+    leftLowerLeg.position.set(-0.4 * scale, -0.3 * scale, 0);
+    model.add(leftLowerLeg);
+    
+    const leftFoot = new THREE.Mesh(footGeometry, createPBRMaterial({ color: 0x222222, roughness: 0.6 }));
+    leftFoot.position.set(-0.4 * scale, -0.8 * scale, 0.2 * scale);
+    model.add(leftFoot);
+    
+    // Right leg
+    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, armorMaterial);
+    rightUpperLeg.position.set(0.4 * scale, 0.6 * scale, 0);
+    model.add(rightUpperLeg);
+    
+    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, armorMaterial);
+    rightLowerLeg.position.set(0.4 * scale, -0.3 * scale, 0);
+    model.add(rightLowerLeg);
+    
+    const rightFoot = new THREE.Mesh(footGeometry, createPBRMaterial({ color: 0x222222, roughness: 0.6 }));
+    rightFoot.position.set(0.4 * scale, -0.8 * scale, 0.2 * scale);
+    model.add(rightFoot);
+    
+    // Store animation references
+    model.leftUpperLeg = leftUpperLeg;
+    model.leftLowerLeg = leftLowerLeg;
+    model.rightUpperLeg = rightUpperLeg;
+    model.rightLowerLeg = rightLowerLeg;
+    model.leftUpperArm = leftUpperArm;
+    model.leftLowerArm = leftLowerArm;
+    model.rightUpperArm = rightUpperArm;
+    model.rightLowerArm = rightLowerArm;
+    model.rightHand = rightHand;
+    model.torso = torso;
+    
+    // Demon King properties
+    model.health = 1000;
+    model.maxHealth = 1000;
+    model.speed = 0.05;
+    model.fireRate = 600;
+    model.lastShotTime = 0;
+    model.shootingRange = 60;
+    model.state = 'patrol';
+    model.targetPosition = null;
+    model.lastStateChange = 0;
+    model.coverPosition = null;
+    model.animationTime = 0;
+    model.prevX = 0;
+    model.prevZ = 0;
+    model.walkCycle = 0;
+    model.isBoss = true;
+    model.isDemonKing = true;
+    model.specialAttackCooldown = 0;
+    model.minionSpawnCooldown = 0;
+    
+    model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } });
+    return model;
+  }
+
+  // --- DEMON MINION MODEL ---
+  function createDemonMinionModel() {
+    const model = new THREE.Group();
+    
+    // Minion materials - goblin-like appearance
+    const skinMaterial = createPBRMaterial({ color: 0x2d1810, roughness: 0.8 });
+    const armorMaterial = createPBRMaterial({ color: 0x1a0a00, roughness: 0.7 });
+    const eyeMaterial = createPBRMaterial({ color: 0xff0000, roughness: 0.2, emissive: 0xff0000, emissiveIntensity: 0.6 });
+    
+    // Scale factor for minions (0.7x normal size)
+    const scale = 0.7;
+    
+    // Head with goblin features
+    const headGeometry = new THREE.BoxGeometry(0.5 * scale, 0.6 * scale, 0.4 * scale);
+    const head = new THREE.Mesh(headGeometry, skinMaterial);
+    head.position.y = 1.8 * scale;
+    head.scale.set(1, 1.2, 0.9);
+    model.add(head);
+    
+    // Pointed ears
+    const leftEarGeometry = new THREE.ConeGeometry(0.1 * scale, 0.3 * scale, 4);
+    const leftEar = new THREE.Mesh(leftEarGeometry, skinMaterial);
+    leftEar.position.set(-0.25 * scale, 2.0 * scale, 0);
+    leftEar.rotation.z = -0.5;
+    model.add(leftEar);
+    
+    const rightEarGeometry = new THREE.ConeGeometry(0.1 * scale, 0.3 * scale, 4);
+    const rightEar = new THREE.Mesh(rightEarGeometry, skinMaterial);
+    rightEar.position.set(0.25 * scale, 2.0 * scale, 0);
+    rightEar.rotation.z = 0.5;
+    model.add(rightEar);
+    
+    // Glowing red eyes
+    const leftEyeGeometry = new THREE.SphereGeometry(0.08 * scale, 6, 6);
+    const leftEye = new THREE.Mesh(leftEyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.15 * scale, 1.9 * scale, 0.2 * scale);
+    model.add(leftEye);
+    
+    const rightEyeGeometry = new THREE.SphereGeometry(0.08 * scale, 6, 6);
+    const rightEye = new THREE.Mesh(rightEyeGeometry, eyeMaterial);
+    rightEye.position.set(0.15 * scale, 1.9 * scale, 0.2 * scale);
+    model.add(rightEye);
+    
+    // Small horns
+    for (let i = 0; i < 2; i++) {
+      const hornGeometry = new THREE.ConeGeometry(0.04 * scale, 0.2 * scale, 4);
+      const horn = new THREE.Mesh(hornGeometry, createPBRMaterial({ color: 0x222222, roughness: 0.5 }));
+      horn.position.set((i === 0 ? -0.2 : 0.2) * scale, 2.2 * scale, 0);
+      horn.rotation.z = (i === 0 ? 0.3 : -0.3);
+      model.add(horn);
+    }
+    
+    // Neck
+    const neckGeometry = new THREE.CylinderGeometry(0.15 * scale, 0.18 * scale, 0.3 * scale, 12);
+    const neck = new THREE.Mesh(neckGeometry, skinMaterial);
+    neck.position.y = 1.5 * scale;
+    model.add(neck);
+    
+    // Small body
+    const bodyGeometry = new THREE.BoxGeometry(0.7 * scale, 0.9 * scale, 0.4 * scale);
+    const body = new THREE.Mesh(bodyGeometry, armorMaterial);
+    body.position.y = 0.9 * scale;
+    model.add(body);
+    
+    // Arms with claws
+    const upperArmGeometry = new THREE.CylinderGeometry(0.1 * scale, 0.12 * scale, 0.6 * scale, 12);
+    const lowerArmGeometry = new THREE.CylinderGeometry(0.08 * scale, 0.1 * scale, 0.5 * scale, 12);
+    const handGeometry = new THREE.BoxGeometry(0.15 * scale, 0.1 * scale, 0.3 * scale);
+    
+    // Left arm
+    const leftUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+    leftUpperArm.position.set(-0.45 * scale, 1.1 * scale, 0);
+    leftUpperArm.rotation.z = Math.PI / 2;
+    model.add(leftUpperArm);
+    
+    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, skinMaterial);
+    leftLowerArm.position.set(-0.7 * scale, 0.8 * scale, 0);
+    leftLowerArm.rotation.z = Math.PI / 2;
+    model.add(leftLowerArm);
+    
+    const leftHand = new THREE.Mesh(handGeometry, skinMaterial);
+    leftHand.position.set(-0.85 * scale, 0.6 * scale, 0);
+    model.add(leftHand);
+    
+    // Left claws
+    for (let i = 0; i < 3; i++) {
+      const clawGeometry = new THREE.ConeGeometry(0.02 * scale, 0.15 * scale, 4);
+      const claw = new THREE.Mesh(clawGeometry, createPBRMaterial({ color: 0x111111, roughness: 0.3 }));
+      claw.position.set(-0.85 * scale, 0.6 * scale, 0.1 + i * 0.05);
+      claw.rotation.x = Math.PI / 2;
+      leftHand.add(claw);
+    }
+    
+    // Right arm
+    const rightUpperArm = new THREE.Mesh(upperArmGeometry, skinMaterial);
+    rightUpperArm.position.set(0.45 * scale, 1.1 * scale, 0);
+    rightUpperArm.rotation.z = Math.PI / 2;
+    model.add(rightUpperArm);
+    
+    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, skinMaterial);
+    rightLowerArm.position.set(0.7 * scale, 0.8 * scale, 0);
+    rightLowerArm.rotation.z = Math.PI / 2;
+    model.add(rightLowerArm);
+    
+    const rightHand = new THREE.Mesh(handGeometry, skinMaterial);
+    rightHand.position.set(0.85 * scale, 0.6 * scale, 0);
+    model.add(rightHand);
+    
+    // Right claws
+    for (let i = 0; i < 3; i++) {
+      const clawGeometry = new THREE.ConeGeometry(0.02 * scale, 0.15 * scale, 4);
+      const claw = new THREE.Mesh(clawGeometry, createPBRMaterial({ color: 0x111111, roughness: 0.3 }));
+      claw.position.set(0.85 * scale, 0.6 * scale, 0.1 + i * 0.05);
+      claw.rotation.x = Math.PI / 2;
+      rightHand.add(claw);
+    }
+    
+    // Small legs
+    const upperLegGeometry = new THREE.CylinderGeometry(0.12 * scale, 0.14 * scale, 0.6 * scale, 12);
+    const lowerLegGeometry = new THREE.CylinderGeometry(0.1 * scale, 0.12 * scale, 0.5 * scale, 12);
+    const footGeometry = new THREE.BoxGeometry(0.2 * scale, 0.1 * scale, 0.4 * scale);
+    
+    // Left leg
+    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, armorMaterial);
+    leftUpperLeg.position.set(-0.2 * scale, 0.3 * scale, 0);
+    model.add(leftUpperLeg);
+    
+    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, armorMaterial);
+    leftLowerLeg.position.set(-0.2 * scale, -0.2 * scale, 0);
+    model.add(leftLowerLeg);
+    
+    const leftFoot = new THREE.Mesh(footGeometry, createPBRMaterial({ color: 0x111111, roughness: 0.7 }));
+    leftFoot.position.set(-0.2 * scale, -0.5 * scale, 0.1 * scale);
+    model.add(leftFoot);
+    
+    // Right leg
+    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, armorMaterial);
+    rightUpperLeg.position.set(0.2 * scale, 0.3 * scale, 0);
+    model.add(rightUpperLeg);
+    
+    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, armorMaterial);
+    rightLowerLeg.position.set(0.2 * scale, -0.2 * scale, 0);
+    model.add(rightLowerLeg);
+    
+    const rightFoot = new THREE.Mesh(footGeometry, createPBRMaterial({ color: 0x111111, roughness: 0.7 }));
+    rightFoot.position.set(0.2 * scale, -0.5 * scale, 0.1 * scale);
+    model.add(rightFoot);
+    
+    // Store animation references
+    model.leftUpperLeg = leftUpperLeg;
+    model.leftLowerLeg = leftLowerLeg;
+    model.rightUpperLeg = rightUpperLeg;
+    model.rightLowerLeg = rightLowerLeg;
+    model.leftUpperArm = leftUpperArm;
+    model.leftLowerArm = leftLowerArm;
+    model.rightUpperArm = rightUpperArm;
+    model.rightLowerArm = rightLowerArm;
+    model.rightHand = rightHand;
+    model.torso = body;
+    
+    // Minion properties
+    model.health = 50;
+    model.maxHealth = 50;
+    model.speed = 0.12; // Faster than regular enemies
+    model.fireRate = 2000;
+    model.lastShotTime = 0;
+    model.shootingRange = 25;
+    model.state = 'patrol';
+    model.targetPosition = null;
+    model.lastStateChange = 0;
+    model.coverPosition = null;
+    model.animationTime = 0;
+    model.prevX = 0;
+    model.prevZ = 0;
+    model.walkCycle = 0;
+    model.isBoss = false;
+    model.isMinion = true;
+    
+    model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } });
+    return model;
+  }
+
+  // --- FIRST PERSON HANDS AND GUN ---
+  const handsAndGun = new THREE.Group();
+  scene.add(handsAndGun);
   
-  function createPlayerModel() { 
-    const model = new THREE.Group(); 
-    const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xfdbcb4 }); 
-    const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff }); 
-    const pantsMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 }); 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), skinMaterial); 
-    head.position.y = 2.5; 
-    model.add(head); 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5), shirtMaterial); 
-    body.position.y = 1.25; 
-    model.add(body); 
-    const armGeometry = new THREE.BoxGeometry(0.3, 1.2, 0.3); 
-    const leftArm = new THREE.Mesh(armGeometry, skinMaterial); 
-    leftArm.position.set(-0.65, 1.25, 0); 
-    model.add(leftArm); 
-    const rightArm = new THREE.Mesh(armGeometry, skinMaterial); 
-    rightArm.position.set(0.65, 1.25, 0); 
-    model.add(rightArm); 
-    const legGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4); 
-    const leftLeg = new THREE.Mesh(legGeometry, pantsMaterial); 
-    leftLeg.position.set(-0.25, 0, 0); 
-    model.add(leftLeg); 
-    const rightLeg = new THREE.Mesh(legGeometry, pantsMaterial); 
-    rightLeg.position.set(0.25, 0, 0); 
-    model.add(rightLeg); 
-    const gun = createGunModel(); 
-    gun.position.set(0, -0.4, 0.2); 
-    rightArm.add(gun); 
-    model.rightArm = rightArm; 
-    model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } }); 
-    return model; 
+  function createFirstPersonHands() {
+    const hands = new THREE.Group();
+    const handMaterial = createPBRMaterial({ color: 0xfdbcb4, roughness: 0.7 });
+    
+    const leftHand = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.3, 0.8),
+      handMaterial
+    );
+    leftHand.position.set(-0.25, -0.15, -0.2);
+    hands.add(leftHand);
+    
+    const rightHand = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.3, 0.8),
+      handMaterial
+    );
+    rightHand.position.set(0.25, -0.15, -0.2);
+    hands.add(rightHand);
+    
+    // Gun
+    const gun = new THREE.Group();
+    const gunMaterial = createPBRMaterial({ color: 0x333333, roughness: 0.2, metalness: 0.8 });
+    
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 16), gunMaterial);
+    barrel.rotation.z = Math.PI / 2;
+    barrel.position.z = 0.5;
+    gun.add(barrel);
+    
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.7), gunMaterial);
+    body.position.z = 0.1;
+    gun.add(body);
+    
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.2), gunMaterial);
+    grip.position.set(0, -0.3, -0.1);
+    gun.add(grip);
+    
+    gun.position.set(0, -0.1, 0.3);
+    hands.add(gun);
+    
+    hands.currentGun = gun;
+    hands.leftHand = leftHand;
+    hands.rightHand = rightHand;
+    
+    return hands;
+  }
+  
+  const firstPersonModel = createFirstPersonHands();
+  handsAndGun.add(firstPersonModel);
+
+  // --- VILLAGE ENVIRONMENT ---
+  function createSky() {
+    const skyGeometry = new THREE.SphereGeometry(800, 32, 32);
+    const skyMaterial = new THREE.MeshBasicMaterial({
+      color: 0x87ceeb,
+      side: THREE.BackSide,
+      fog: false
+    });
+    const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    scene.add(sky);
+
+    const cloudGeometry = new THREE.PlaneGeometry(100, 100);
+    const cloudMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.7,
+      side: THREE.DoubleSide
+    });
+
+    for (let i = 0; i < 20; i++) {
+      const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+      cloud.position.set(
+        (Math.random() - 0.5) * 400,
+        50 + Math.random() * 50,
+        (Math.random() - 0.5) * 400
+      );
+      cloud.rotation.x = Math.PI / 2;
+      cloud.scale.set(
+        0.5 + Math.random() * 1.5,
+        0.5 + Math.random() * 1.5,
+        1
+      );
+      scene.add(cloud);
+    }
   }
 
-  // --- ENEMY MODEL ---
-  function createEnemyModel() { 
-    const model = new THREE.Group(); 
-    const enemyMaterial = new THREE.MeshStandardMaterial({ color: 0x8B0000 }); 
-    const pantsMaterial = new THREE.MeshStandardMaterial({ color: 0x2F4F4F }); 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), enemyMaterial); 
-    head.position.y = 2.5; 
-    model.add(head); 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1, 1.5, 0.5), enemyMaterial); 
-    body.position.y = 1.25; 
-    model.add(body); 
-    const armGeometry = new THREE.BoxGeometry(0.3, 1.2, 0.3); 
-    const leftArm = new THREE.Mesh(armGeometry, enemyMaterial); 
-    leftArm.position.set(-0.65, 1.25, 0); 
-    model.add(leftArm); 
-    const rightArm = new THREE.Mesh(armGeometry, enemyMaterial); 
-    rightArm.position.set(0.65, 1.25, 0); 
-    model.add(rightArm); 
-    const legGeometry = new THREE.BoxGeometry(0.4, 1.2, 0.4); 
-    const leftLeg = new THREE.Mesh(legGeometry, pantsMaterial); 
-    leftLeg.position.set(-0.25, 0, 0); 
-    model.add(leftLeg); 
-    const rightLeg = new THREE.Mesh(legGeometry, pantsMaterial); 
-    rightLeg.position.set(0.25, 0, 0); 
-    model.add(rightLeg); 
-    model.health = 100; 
-    model.maxHealth = 100; 
-    model.speed = 0.02; 
-    model.fireRate = 2000; 
-    model.lastShotTime = 0; 
-    model.shootingRange = 25; 
-    model.state = 'patrol'; 
-    model.targetPosition = null; 
-    model.lastStateChange = 0; 
-    model.coverPosition = null; 
-    model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } }); 
-    return model; 
+  function createVillageHouse(x, z, houseType = 'normal') {
+    const house = new THREE.Group();
+    
+    // Different house types for variety
+    let width, depth, height, wallColor, roofColor;
+    
+    switch(houseType) {
+      case 'small':
+        width = 6 + Math.random() * 2;
+        depth = 6 + Math.random() * 2;
+        height = 4 + Math.random() * 2;
+        wallColor = 0xD2691E;
+        roofColor = 0x8B4513;
+        break;
+      case 'large':
+        width = 10 + Math.random() * 3;
+        depth = 10 + Math.random() * 3;
+        height = 8 + Math.random() * 3;
+        wallColor = 0xCD853F;
+        roofColor = 0xA0522D;
+        break;
+      default:
+        width = 8 + Math.random() * 2;
+        depth = 8 + Math.random() * 2;
+        height = 6 + Math.random() * 2;
+        wallColor = 0xDEB887;
+        roofColor = 0x8B4513;
+    }
+    
+    // Foundation
+    const foundationMaterial = createPBRMaterial({ color: 0x8B7355, roughness: 0.9 });
+    const foundation = new THREE.Mesh(
+      new THREE.BoxGeometry(width, 0.5, depth),
+      foundationMaterial
+    );
+    foundation.position.y = 0.25;
+    foundation.receiveShadow = true;
+    house.add(foundation);
+    
+    // Walls
+    const wallMaterial = createPBRMaterial({ color: wallColor, roughness: 0.8 });
+    const wallThickness = 0.3;
+    
+    // Front wall
+    const frontWall = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, wallThickness),
+      wallMaterial
+    );
+    frontWall.position.set(0, height / 2 + 0.5, -depth / 2);
+    frontWall.castShadow = true;
+    house.add(frontWall);
+    
+    // Back wall
+    const backWall = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, wallThickness),
+      wallMaterial
+    );
+    backWall.position.set(0, height / 2 + 0.5, depth / 2);
+    backWall.castShadow = true;
+    house.add(backWall);
+    
+    // Left wall
+    const leftWall = new THREE.Mesh(
+      new THREE.BoxGeometry(wallThickness, height, depth),
+      wallMaterial
+    );
+    leftWall.position.set(-width / 2, height / 2 + 0.5, 0);
+    leftWall.castShadow = true;
+    house.add(leftWall);
+    
+    // Right wall
+    const rightWall = new THREE.Mesh(
+      new THREE.BoxGeometry(wallThickness, height, depth),
+      wallMaterial
+    );
+    rightWall.position.set(width / 2, height / 2 + 0.5, 0);
+    rightWall.castShadow = true;
+    house.add(rightWall);
+    
+    // Roof
+    const roofMaterial = createPBRMaterial({ color: roofColor, roughness: 0.7 });
+    const roofGeometry = new THREE.ConeGeometry(width * 0.7, height * 0.4, 8);
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.position.y = height + 0.5;
+    roof.rotation.x = Math.PI;
+    roof.castShadow = true;
+    house.add(roof);
+    
+    // Door
+    const doorMaterial = createPBRMaterial({ color: 0x654321, roughness: 0.8 });
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 2.0, 0.2),
+      doorMaterial
+    );
+    door.position.set(0, 1.5, -depth / 2);
+    house.add(door);
+    
+    // Windows
+    const windowMaterial = createPBRMaterial({ color: 0x87CEEB, transparent: true, opacity: 0.6 });
+    
+    // Front windows
+    const leftWindow = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 1.0, 0.1),
+      windowMaterial
+    );
+    leftWindow.position.set(-width / 3, height / 2 + 0.5, -depth / 2);
+    house.add(leftWindow);
+    
+    const rightWindow = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 1.0, 0.1),
+      windowMaterial
+    );
+    rightWindow.position.set(width / 3, height / 2 + 0.5, -depth / 2);
+    house.add(rightWindow);
+    
+    // Chimney (for some houses)
+    if (Math.random() > 0.5) {
+      const chimneyMaterial = createPBRMaterial({ color: 0x8B4513, roughness: 0.8 });
+      const chimney = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 2, 0.6),
+        chimneyMaterial
+      );
+      chimney.position.set((Math.random() - 0.5) * width * 0.6, height + 1, (Math.random() - 0.5) * depth * 0.6);
+      chimney.castShadow = true;
+      house.add(chimney);
+    }
+    
+    house.position.set(x, 0, z);
+    return house;
+  }
+
+  function createVillage() {
+    createSky();
+    
+    // Ground
+    const groundMaterial = createPBRMaterial({ color: 0x7CFC00, roughness: 0.8 });
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(500, 500),
+      groundMaterial
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    // Add terrain variations
+    for (let i = 0; i < 50; i++) {
+      const terrain = new THREE.Mesh(
+        new THREE.CircleGeometry(2 + Math.random() * 3, 8),
+        createPBRMaterial({ color: Math.random() > 0.5 ? 0x90EE90 : 0x7CFC00, roughness: 0.9 })
+      );
+      terrain.position.set(
+        (Math.random() - 0.5) * 200,
+        0.01,
+        (Math.random() - 0.5) * 200
+      );
+      terrain.rotation.x = -Math.PI / 2;
+      scene.add(terrain);
+    }
+    
+    // Create village layout with roads
+    const villageCenter = { x: 0, z: 0 };
+    const housePositions = [];
+    
+    // Main street houses
+    for (let i = -5; i <= 5; i++) {
+      if (i !== 0) {
+        housePositions.push({ x: i * 15, z: 0, type: 'normal' });
+        housePositions.push({ x: i * 15, z: 15, type: 'normal' });
+        housePositions.push({ x: i * 15, z: -15, type: 'normal' });
+      }
+    }
+    
+    // Side streets
+    for (let i = -4; i <= 4; i++) {
+      if (i !== 0) {
+        housePositions.push({ x: 0, z: i * 12, type: i % 2 === 0 ? 'normal' : 'small' });
+        housePositions.push({ x: 20, z: i * 12, type: i % 2 === 0 ? 'normal' : 'small' });
+        housePositions.push({ x: -20, z: i * 12, type: i % 2 === 0 ? 'normal' : 'small' });
+      }
+    }
+    
+    // Create a grid of houses around the center
+    for (let x = -3; x <= 3; x++) {
+      for (let z = -3; z <= 3; z++) {
+        if (x !== 0 || z !== 0) {
+          const distance = Math.sqrt(x * x + z * z);
+          let houseType = 'normal';
+          if (distance > 2.5) houseType = 'small';
+          if (distance < 1.5 && Math.random() > 0.7) houseType = 'large';
+          
+          housePositions.push({
+            x: x * 25 + (Math.random() - 0.5) * 8,
+            z: z * 25 + (Math.random() - 0.5) * 8,
+            type: houseType
+          });
+        }
+      }
+    }
+    
+    // Outer village houses
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+      const distance = 80 + Math.random() * 40;
+      housePositions.push({
+        x: Math.cos(angle) * distance,
+        z: Math.sin(angle) * distance,
+        type: 'small'
+      });
+    }
+    
+    // Create all houses and add collision boxes
+    housePositions.forEach(pos => {
+      const house = createVillageHouse(pos.x, pos.z, pos.type);
+      scene.add(house);
+      
+      // Add collision box for this house
+      const houseWidth = pos.type === 'small' ? 7 : (pos.type === 'large' ? 12 : 9);
+      const houseDepth = pos.type === 'small' ? 7 : (pos.type === 'large' ? 12 : 9);
+      addCollisionBox(
+        pos.x - houseWidth / 2,
+        pos.x + houseWidth / 2,
+        pos.z - houseDepth / 2,
+        pos.z + houseDepth / 2
+      );
+    });
+    
+    // Add trees and vegetation
+    for (let i = 0; i < 40; i++) {
+      const treeType = Math.random() > 0.5 ? 'pine' : 'palm';
+      const tree = createTree(
+        (Math.random() - 0.5) * 200,
+        (Math.random() - 0.5) * 200,
+        treeType,
+        0.6 + Math.random() * 0.8
+      );
+      scene.add(tree);
+    }
+    
+    // Add rocks and decorative elements
+    for (let i = 0; i < 30; i++) {
+      const rock = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.3 + Math.random() * 0.4),
+        createPBRMaterial({ color: 0x808080, roughness: 0.9 })
+      );
+      rock.position.set(
+        (Math.random() - 0.5) * 200,
+        0.3,
+        (Math.random() - 0.5) * 200
+      );
+      rock.castShadow = true;
+      scene.add(rock);
+    }
+    
+    // Add village well in center
+    const wellGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 16);
+    const wellMaterial = createPBRMaterial({ color: 0x8B4513, roughness: 0.8 });
+    const well = new THREE.Mesh(wellGeometry, wellMaterial);
+    well.position.set(0, 0.15, 0);
+    scene.add(well);
+  }
+
+  function createTree(x, z, type = 'pine', scale = 1) {
+    const tree = new THREE.Group();
+    
+    if (type === 'pine') {
+      // Pine tree
+      const trunkGeometry = new THREE.CylinderGeometry(0.3 * scale, 0.4 * scale, 4 * scale, 8);
+      const trunkMaterial = createPBRMaterial({ color: 0x8B4513, roughness: 0.8 });
+      const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+      trunk.position.y = 2 * scale;
+      trunk.castShadow = true;
+      tree.add(trunk);
+      
+      const leafMaterial = createPBRMaterial({ color: 0x228B22, roughness: 0.7 });
+      
+      for (let i = 0; i < 4; i++) {
+        const layerGeometry = new THREE.ConeGeometry(
+          (1.5 - i * 0.3) * scale,
+          2 * scale,
+          8
+        );
+        const layer = new THREE.Mesh(layerGeometry, leafMaterial);
+        layer.position.y = (3 + i * 1.5) * scale;
+        layer.castShadow = true;
+        tree.add(layer);
+      }
+    } else {
+      // Palm tree
+      const trunkGeometry = new THREE.CylinderGeometry(0.2 * scale, 0.3 * scale, 5 * scale, 8);
+      const trunkMaterial = createPBRMaterial({ color: 0x8B4513, roughness: 0.8 });
+      const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+      trunk.position.y = 2.5 * scale;
+      trunk.castShadow = true;
+      tree.add(trunk);
+      
+      const leafMaterial = createPBRMaterial({ color: 0x2E7D32, roughness: 0.7 });
+      
+      for (let i = 0; i < 8; i++) {
+        const leafGeometry = new THREE.ConeGeometry(0.8 * scale, 3 * scale, 8);
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+        leaf.position.y = (4 + Math.random() * 0.5) * scale;
+        leaf.rotation.x = Math.random() * 0.5;
+        leaf.rotation.z = (Math.random() - 0.5) * 0.5;
+        leaf.rotation.y = (i * Math.PI / 4);
+        leaf.castShadow = true;
+        tree.add(leaf);
+      }
+    }
+    
+    tree.position.set(x, 0, z);
+    return tree;
   }
 
   // --- COLLISION SYSTEM ---
@@ -236,191 +1494,406 @@ function initGame() {
     return false;
   }
 
-  // --- MAP GENERATOR WITH COLLISION ---
-  function createBuilding(x, z, width, depth, height = 8, color = 0x808080) {
-    const wallThickness = 0.5; 
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: color });
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(width, 0.1, depth), new THREE.MeshStandardMaterial({ color: 0x696969 })); 
-    floor.position.set(x, 0.05, z); 
-    floor.receiveShadow = true; 
-    scene.add(floor);
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(width, 0.2, depth), new THREE.MeshStandardMaterial({ color: 0x4a4a4a })); 
-    roof.position.set(x, height, z); 
-    roof.castShadow = true; 
-    roof.receiveShadow = true; 
-    scene.add(roof);
-    const frontWall = new THREE.Mesh(new THREE.BoxGeometry(width, height, wallThickness), wallMaterial); 
-    frontWall.position.set(x, height / 2, z - depth / 2); 
-    frontWall.castShadow = true; 
-    scene.add(frontWall);
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(width, height, wallThickness), wallMaterial); 
-    backWall.position.set(x, height / 2, z + depth / 2); 
-    backWall.castShadow = true; 
-    scene.add(backWall);
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, height, depth), wallMaterial); 
-    leftWall.position.set(x - width / 2, height / 2, z); 
-    leftWall.castShadow = true; 
-    scene.add(leftWall);
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, height, depth), wallMaterial); 
-    rightWall.position.set(x + width / 2, height / 2, z); 
-    rightWall.castShadow = true; 
-    scene.add(rightWall);
+  // --- ENEMY AI WITH REALISTIC MOVEMENT ---
+  function updateEnemyAI(enemy, currentTime) {
+    const playerDistance = camera.position.distanceTo(enemy.position);
+    enemy.walkCycle += 0.15;
     
-    // Add collision box for this building
-    addCollisionBox(x - width/2, x + width/2, z - depth/2, z + depth/2);
+    // Realistic walking animation
+    const walkSpeed = enemy.state === 'patrol' ? 0.3 : 0.6;
+    if (Math.abs(enemy.position.x - enemy.prevX) > 0.01 || Math.abs(enemy.position.z - enemy.prevZ) > 0.01) {
+      // Leg movement
+      enemy.leftUpperLeg.rotation.x = Math.sin(enemy.walkCycle) * 0.4;
+      enemy.leftLowerLeg.rotation.x = Math.sin(enemy.walkCycle) * 0.3;
+      enemy.rightUpperLeg.rotation.x = -Math.sin(enemy.walkCycle) * 0.4;
+      enemy.rightLowerLeg.rotation.x = -Math.sin(enemy.walkCycle) * 0.3;
+      
+      // Arm swinging
+      enemy.leftUpperArm.rotation.x = -Math.sin(enemy.walkCycle) * 0.2;
+      enemy.leftLowerArm.rotation.x = -Math.sin(enemy.walkCycle) * 0.15;
+      enemy.rightUpperArm.rotation.x = Math.sin(enemy.walkCycle) * 0.2;
+      enemy.rightLowerArm.rotation.x = Math.sin(enemy.walkCycle) * 0.15;
+      
+      // Body bobbing
+      let baseHeight = 1;
+      if (enemy.isBoss) {
+        baseHeight = enemy.isDemonKing ? 2 : 1.5;
+      }
+      enemy.position.y = Math.sin(enemy.walkCycle * 2) * 0.05 + baseHeight;
+    } else {
+      // Reset to standing position
+      enemy.leftUpperLeg.rotation.x = THREE.MathUtils.lerp(enemy.leftUpperLeg.rotation.x, 0, 0.1);
+      enemy.leftLowerLeg.rotation.x = THREE.MathUtils.lerp(enemy.leftLowerLeg.rotation.x, 0, 0.1);
+      enemy.rightUpperLeg.rotation.x = THREE.MathUtils.lerp(enemy.rightUpperLeg.rotation.x, 0, 0.1);
+      enemy.rightLowerLeg.rotation.x = THREE.MathUtils.lerp(enemy.rightLowerLeg.rotation.x, 0, 0.1);
+      enemy.leftUpperArm.rotation.x = THREE.MathUtils.lerp(enemy.leftUpperArm.rotation.x, 0, 0.1);
+      enemy.leftLowerArm.rotation.x = THREE.MathUtils.lerp(enemy.leftLowerArm.rotation.x, 0, 0.1);
+      enemy.rightUpperArm.rotation.x = THREE.MathUtils.lerp(enemy.rightUpperArm.rotation.x, 0, 0.1);
+      enemy.rightLowerArm.rotation.x = THREE.MathUtils.lerp(enemy.rightLowerArm.rotation.x, 0, 0.1);
+      
+      let baseHeight = 1;
+      if (enemy.isBoss) {
+        baseHeight = enemy.isDemonKing ? 2 : 1.5;
+      }
+      enemy.position.y = THREE.MathUtils.lerp(enemy.position.y, baseHeight, 0.1);
+    }
+    
+    enemy.prevX = enemy.position.x;
+    enemy.prevZ = enemy.position.z;
+    
+    // State machine
+    switch(enemy.state) {
+      case 'patrol':
+        if (!enemy.targetPosition || enemy.position.distanceTo(enemy.targetPosition) < 2) {
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 10 + Math.random() * 10;
+          enemy.targetPosition = enemy.originalPosition.clone().add(
+            new THREE.Vector3(Math.cos(angle) * distance, 0, Math.sin(angle) * distance)
+          );
+        }
+        
+        const patrolDirection = new THREE.Vector3();
+        patrolDirection.subVectors(enemy.targetPosition, enemy.position);
+        patrolDirection.y = 0;
+        patrolDirection.normalize();
+        
+        const nextPos = enemy.position.clone().add(patrolDirection.multiplyScalar(enemy.speed));
+        let collisionRadius = 0.5;
+        if (enemy.isBoss) {
+          collisionRadius = enemy.isDemonKing ? 1.2 : 0.8;
+        }
+        if (!checkCollision(nextPos.x, nextPos.z, collisionRadius)) {
+          enemy.position.add(patrolDirection.multiplyScalar(enemy.speed));
+        }
+        
+        enemy.rotation.y = Math.atan2(patrolDirection.x, patrolDirection.z);
+        
+        if (playerDistance < 30) {
+          enemy.state = 'combat';
+          enemy.lastStateChange = currentTime;
+        }
+        break;
+        
+      case 'combat':
+        const direction = new THREE.Vector3();
+        direction.subVectors(camera.position, enemy.position);
+        direction.y = 0;
+        direction.normalize();
+        
+        if (playerDistance > 15) {
+          const nextPos = enemy.position.clone().add(direction.multiplyScalar(enemy.speed * 1.5));
+          let collisionRadius = 0.5;
+          if (enemy.isBoss) {
+            collisionRadius = enemy.isDemonKing ? 1.2 : 0.8;
+          }
+          if (!checkCollision(nextPos.x, nextPos.z, collisionRadius)) {
+            enemy.position.add(direction.multiplyScalar(enemy.speed * 1.5));
+          }
+        } else if (playerDistance < 10) {
+          const nextPos = enemy.position.clone().add(direction.multiplyScalar(-enemy.speed));
+          let collisionRadius = 0.5;
+          if (enemy.isBoss) {
+            collisionRadius = enemy.isDemonKing ? 1.2 : 0.8;
+          }
+          if (!checkCollision(nextPos.x, nextPos.z, collisionRadius)) {
+            enemy.position.add(direction.multiplyScalar(-enemy.speed));
+          }
+        }
+        
+        enemy.rotation.y = Math.atan2(direction.x, direction.z);
+        
+        // Aim at player
+        if (enemy.rightHand) {
+          enemy.rightHand.rotation.x = -Math.atan2(
+            camera.position.y - enemy.position.y - 1.5,
+            playerDistance
+          ) * 0.5;
+        }
+        
+        if (playerDistance < enemy.shootingRange && currentTime - enemy.lastShotTime > enemy.fireRate) {
+          // Demon King special attacks
+          if (enemy.isDemonKing) {
+            // Spawn minions periodically
+            if (enemy.minionSpawnCooldown <= 0) {
+              spawnDemonMinion(enemy.position);
+              enemy.minionSpawnCooldown = 8000; // 8 seconds between minion spawns
+            }
+            
+            // Fireball attack
+            if (enemy.specialAttackCooldown <= 0 && Math.random() < 0.4) {
+              // Multiple fireballs in a spread pattern
+              for (let i = -2; i <= 2; i++) {
+                const fireball = new THREE.Mesh(
+                  new THREE.SphereGeometry(0.2, 8, 8), 
+                  new THREE.MeshBasicMaterial({ color: 0xff3300 })
+                );
+                fireball.position.copy(enemy.position);
+                fireball.position.y = 4;
+                
+                const fireballDirection = new THREE.Vector3();
+                fireballDirection.subVectors(camera.position, enemy.position).normalize();
+                fireballDirection.x += i * 0.15;
+                fireballDirection.normalize();
+                
+                fireball.velocity = fireballDirection.multiplyScalar(0.6);
+                fireball.isDemonKingProjectile = true;
+                scene.add(fireball);
+                enemyBullets.push(fireball);
+              }
+              enemy.specialAttackCooldown = 4000; // 4 seconds between special attacks
+            } else {
+              // Normal fireball attack
+              const fireball = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 8, 8), 
+                new THREE.MeshBasicMaterial({ color: 0xff6600 })
+              );
+              fireball.position.copy(enemy.position);
+              fireball.position.y = 4;
+              
+              const fireballDirection = new THREE.Vector3();
+              fireballDirection.subVectors(camera.position, enemy.position).normalize();
+              fireball.velocity = fireballDirection.multiplyScalar(0.5);
+              fireball.isDemonKingProjectile = true;
+              scene.add(fireball);
+              enemyBullets.push(fireball);
+            }
+          } 
+          // Minion attack
+          else if (enemy.isMinion) {
+            const projectile = new THREE.Mesh(
+              new THREE.SphereGeometry(0.08, 6, 6), 
+              new THREE.MeshBasicMaterial({ color: 0xff9900 })
+            );
+            projectile.position.copy(enemy.position);
+            projectile.position.y = 1.2;
+            
+            const projectileDirection = new THREE.Vector3();
+            projectileDirection.subVectors(camera.position, enemy.position).normalize();
+            projectile.velocity = projectileDirection.multiplyScalar(0.4);
+            projectile.isMinionProjectile = true;
+            scene.add(projectile);
+            enemyBullets.push(projectile);
+          }
+          // Regular enemy attack
+          else {
+            const rocket = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8), 
+              new THREE.MeshBasicMaterial({ color: 0xff4500 })
+            );
+            rocket.position.copy(enemy.position);
+            rocket.position.y = 2.5;
+            const rocketDirection = new THREE.Vector3();
+            rocketDirection.subVectors(camera.position, enemy.position).normalize();
+            rocket.velocity = rocketDirection.multiplyScalar(0.4);
+            rocket.rotation.z = Math.PI/2;
+            scene.add(rocket);
+            enemyBullets.push(rocket);
+          }
+          
+          enemy.lastShotTime = currentTime;
+        }
+        
+        if (playerDistance > 50) {
+          enemy.state = 'patrol';
+          enemy.lastStateChange = currentTime;
+        }
+        break;
+    }
+    
+    // Update cooldowns
+    if (enemy.specialAttackCooldown > 0) {
+      enemy.specialAttackCooldown -= 16; // Approximate frame time
+    }
+    if (enemy.minionSpawnCooldown > 0) {
+      enemy.minionSpawnCooldown -= 16;
+    }
   }
 
-  function createCover(x, z) {
-    const cover = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 0.5), new THREE.MeshStandardMaterial({ color: 0x654321 }));
-    cover.position.set(x, 0.5, z);
-    cover.castShadow = true; 
-    cover.receiveShadow = true;
-    scene.add(cover);
-    
-    // Add collision box for cover
-    addCollisionBox(x - 2, x + 2, z - 0.25, z + 0.25);
-  }
-
-  function generateMap() {
-    // Central Compound
-    createBuilding(0, 0, 20, 20, 10, 0xA0522D);
-    createBuilding(25, 0, 15, 12, 8, 0x696969);
-    createBuilding(-25, 0, 15, 12, 8, 0x696969);
-    
-    // North District
-    createBuilding(0, -40, 12, 15, 7, 0x8B4513);
-    createBuilding(20, -45, 10, 10, 6, 0x696969);
-    createBuilding(-20, -45, 10, 10, 6, 0x696969);
-
-    // South District
-    createBuilding(0, 40, 18, 14, 8, 0xA0522D);
-    createBuilding(30, 35, 12, 12, 7, 0x8B4513);
-    createBuilding(-30, 35, 12, 12, 7, 0x8B4513);
-
-    // East & West Outposts
-    createBuilding(45, 10, 12, 12, 7, 0x8B4513);
-    createBuilding(-45, 10, 12, 12, 7, 0x8B4513);
-
-    // Add cover objects
-    createCover(12, 0);
-    createCover(-12, 0);
-    createCover(0, 20);
-    createCover(0, -20);
-    createCover(30, 15);
-    createCover(-30, 15);
-  }
-
-  // --- LIGHTING ---
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
-  scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); 
-  directionalLight.position.set(50, 100, 50); 
-  directionalLight.castShadow = true; 
-  directionalLight.shadow.camera.left = -100; 
-  directionalLight.shadow.camera.right = 100; 
-  directionalLight.shadow.camera.top = 100; 
-  directionalLight.shadow.camera.bottom = -100; 
-  scene.add(directionalLight);
-
-  // --- WORLD ---
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.8 }));
-  floor.rotation.x = -Math.PI / 2; 
-  floor.receiveShadow = true; 
-  scene.add(floor);
-
-  generateMap();
-
-  // --- SCORING SYSTEM ---
+  // --- GAME VARIABLES ---
+  const playerModel = createRetroStylePlayerModel();
+  scene.add(playerModel);
+  const controls = new PointerLockControls(camera, document.body);
+  
+  let playerHealth = 100;
+  const maxHealth = 100;
+  const healthBar = document.getElementById('health-bar');
+  const gameOverScreen = document.getElementById('game-over');
   let score = 0;
   let combo = 1;
   let lastKillTime = 0;
   const scoreDisplay = document.getElementById('score-display');
   const comboDisplay = document.getElementById('combo-display');
   const finalScoreDisplay = document.getElementById('final-score');
+  let enemies = [];
+  let enemyBullets = [];
+  let bullets = [];
+  let medikits = [];
+  let playerMedikits = 0;
+  let canShoot = true;
+  let currentBoss = null;
+  let demonKing = null;
+  const weapons = [
+    { name: 'Pistol', fireRate: 300, bulletSpeed: 2, damage: 25, color: 0xffff00 }, 
+    { name: 'Rifle', fireRate: 100, bulletSpeed: 4, damage: 15, color: 0xff0000 }, 
+    { name: 'Shotgun', fireRate: 800, bulletSpeed: 3, damage: 50, color: 0x00ff00 }
+  ];
+  let currentWeaponIndex = 0;
+  const weaponDisplay = document.getElementById('weapon-display');
+  const bossHealthContainer = document.getElementById('boss-health-container');
+  const bossHealth = document.getElementById('boss-health');
+  const bossName = document.getElementById('boss-name');
+  const enemyCounter = document.getElementById('enemy-counter');
+  const medikitCounter = document.getElementById('medikit-counter');
 
-  function updateScore(points) {
-    const currentTime = Date.now();
-    if (currentTime - lastKillTime < 2000) {
-      combo = Math.min(combo + 0.5, 5);
-    } else {
-      combo = 1;
+  // --- INITIALIZATION ---
+  createVillage();
+
+  // --- MEDIKIT SPAWNING ---
+  function spawnMedikit() {
+    let spawnPosition;
+    let attempts = 0;
+    do {
+      spawnPosition = {
+        x: (Math.random() - 0.5) * 180,
+        z: (Math.random() - 0.5) * 180
+      };
+      attempts++;
+    } while (checkCollision(spawnPosition.x, spawnPosition.z) && attempts < 50);
+    
+    if (attempts < 50) {
+      const medikit = createMedikitModel();
+      medikit.position.set(spawnPosition.x, 0.5, spawnPosition.z);
+      scene.add(medikit);
+      medikits.push(medikit);
     }
-    lastKillTime = currentTime;
-    
-    score += Math.floor(points * combo);
-    scoreDisplay.textContent = `Score: ${score}`;
-    comboDisplay.textContent = `Combo: x${combo.toFixed(1)}`;
-    
-    // Show score popup
-    showScorePopup(points);
   }
 
-  function showScorePopup(points) {
-    const popup = document.createElement('div');
-    popup.className = 'hit-popup';
-    popup.textContent = `+${Math.floor(points * combo)}`;
-    popup.style.left = '50%';
-    popup.style.top = '40%';
-    document.body.appendChild(popup);
+  // --- ENEMY SPAWNING ---
+  function createEnemy() {
+    let spawnPosition;
+    let attempts = 0;
+    do {
+      spawnPosition = {
+        x: (Math.random() - 0.5) * 150,
+        z: (Math.random() - 0.5) * 150
+      };
+      attempts++;
+    } while (checkCollision(spawnPosition.x, spawnPosition.z) && attempts < 50);
+    
+    if (attempts < 50) {
+      const enemy = createRealisticEnemyModel();
+      enemy.position.set(spawnPosition.x, 1, spawnPosition.z);
+      enemy.originalPosition = enemy.position.clone();
+      scene.add(enemy);
+      enemies.push(enemy);
+    }
+  }
+
+  function spawnDemonMinion(bossPosition) {
+    if (!demonKing) return;
+    
+    // Spawn minions around the demon king
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2;
+      const distance = 5 + Math.random() * 3;
+      
+      const minion = createDemonMinionModel();
+      minion.position.set(
+        bossPosition.x + Math.cos(angle) * distance,
+        0.7,
+        bossPosition.z + Math.sin(angle) * distance
+      );
+      minion.originalPosition = minion.position.clone();
+      scene.add(minion);
+      enemies.push(minion);
+    }
+  }
+
+  function createDemonKing() {
+    if (demonKing) return; // Only one demon king at a time
+    
+    let spawnPosition;
+    let attempts = 0;
+    do {
+      spawnPosition = {
+        x: (Math.random() - 0.5) * 100,
+        z: (Math.random() - 0.5) * 100
+      };
+      attempts++;
+    } while (checkCollision(spawnPosition.x, spawnPosition.z, 1.2) && attempts < 50);
+    
+    if (attempts < 50) {
+      const boss = createDemonKingModel();
+      boss.position.set(spawnPosition.x, 2, spawnPosition.z);
+      boss.originalPosition = boss.position.clone();
+      scene.add(boss);
+      enemies.push(boss);
+      demonKing = boss;
+      currentBoss = boss;
+      
+      // Show boss UI
+      bossName.textContent = "DEMON KING";
+      bossName.style.display = 'block';
+      bossHealthContainer.style.display = 'block';
+      updateBossHealthUI();
+      
+      // Spawn initial minions
+      spawnDemonMinion(boss.position);
+    }
+  }
+
+  function updateBossHealthUI() {
+    if (currentBoss) {
+      const healthPercent = Math.max(0, currentBoss.health / currentBoss.maxHealth);
+      bossHealth.style.width = (healthPercent * 100) + '%';
+    }
+  }
+
+  function updateEnemyCounter() {
+    const regularEnemies = enemies.filter(e => !e.isBoss && !e.isMinion).length;
+    const minions = enemies.filter(e => e.isMinion).length;
+    const bossCount = currentBoss ? 1 : 0;
+    
+    let counterText = `Enemies: ${regularEnemies}`;
+    if (minions > 0) {
+      counterText += ` + ${minions} Minions`;
+    }
+    if (bossCount > 0) {
+      counterText += ` + 1 DEMON KING`;
+      enemyCounter.style.color = '#ff0000';
+    } else {
+      enemyCounter.style.color = 'white';
+    }
+    
+    enemyCounter.textContent = counterText;
+  }
+
+  function updateMedikitCounter() {
+    medikitCounter.textContent = `Medikits: ${playerMedikits}`;
+  }
+
+  function showMedikitNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'medikit-notification';
+    notification.textContent = '+1 MEDIKIT';
+    document.body.appendChild(notification);
     
     setTimeout(() => {
-      document.body.removeChild(popup);
-    }, 1000);
+      document.body.removeChild(notification);
+    }, 2000);
   }
 
-  // --- HIT EFFECT ---
-  function createHitEffect(position) {
-    // Create explosion effect
-    const particleCount = 10;
-    const particles = [];
-    
-    for (let i = 0; i < particleCount; i++) {
-      const particle = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xff6600 })
-      );
-      particle.position.copy(position);
-      
-      const velocity = new THREE.Vector3(
-        (Math.random() - 0.5) * 0.5,
-        Math.random() * 0.5,
-        (Math.random() - 0.5) * 0.5
-      );
-      
-      particle.velocity = velocity;
-      particle.lifetime = 30; // frames
-      
-      scene.add(particle);
-      particles.push(particle);
-    }
-    
-    // Update particles in animation loop
-    function updateParticles() {
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const particle = particles[i];
-        particle.position.add(particle.velocity);
-        particle.velocity.y -= 0.01; // gravity
-        particle.lifetime--;
-        
-        if (particle.lifetime <= 0) {
-          scene.remove(particle);
-          particles.splice(i, 1);
-        }
-      }
-      
-      if (particles.length > 0) {
-        requestAnimationFrame(updateParticles);
-      }
-    }
-    
-    updateParticles();
+  // Spawn initial enemies
+  for (let i = 0; i < 30; i++) { 
+    createEnemy(); 
   }
 
-  // --- HEALTH, WEAPON, SHOOTING ---
-  let playerHealth = 100; 
-  const maxHealth = 100; 
-  const healthBar = document.getElementById('health-bar'); 
-  const gameOverScreen = document.getElementById('game-over');
+  // Spawn initial medikits
+  for (let i = 0; i < 15; i++) {
+    spawnMedikit();
+  }
+
+  // --- GAME FUNCTIONS ---
   function updateHealthUI() { 
     const healthPercent = Math.max(0, playerHealth / maxHealth); 
     healthBar.style.width = (healthPercent * 100) + '%'; 
@@ -428,6 +1901,18 @@ function initGame() {
     else if (healthPercent > 0.3) healthBar.style.backgroundColor = '#ff9800'; 
     else healthBar.style.backgroundColor = '#f44336'; 
   }
+
+  function useMedikit() {
+    if (playerMedikits > 0 && playerHealth < maxHealth) {
+      playerMedikits--;
+      const healAmount = 50;
+      playerHealth = Math.min(playerHealth + healAmount, maxHealth);
+      updateHealthUI();
+      updateMedikitCounter();
+      showMedikitNotification();
+    }
+  }
+
   function takeDamage(amount) { 
     playerHealth -= amount; 
     updateHealthUI(); 
@@ -438,7 +1923,6 @@ function initGame() {
       finalScoreDisplay.style.display = 'block'; 
       controls.unlock(); 
       
-      // Add restart button
       const restartButton = document.createElement('button');
       restartButton.textContent = 'RESTART';
       restartButton.style.position = 'absolute';
@@ -458,19 +1942,32 @@ function initGame() {
       document.body.appendChild(restartButton);
     } 
   }
-  const weapons = [
-    { name: 'Pistol', fireRate: 300, bulletSpeed: 2, damage: 25, color: 0xffff00 }, 
-    { name: 'Rifle', fireRate: 100, bulletSpeed: 4, damage: 15, color: 0xff0000 }, 
-    { name: 'Shotgun', fireRate: 800, bulletSpeed: 3, damage: 50, color: 0x00ff00 }
-  ];
-  let currentWeaponIndex = 0; 
-  let canShoot = true; 
-  const weaponDisplay = document.getElementById('weapon-display');
-  function updateWeaponDisplay() { 
-    weaponDisplay.textContent = `Weapon: ${weapons[currentWeaponIndex].name}`; 
+
+  function updateScore(points) {
+    const currentTime = Date.now();
+    if (currentTime - lastKillTime < 2000) {
+      combo = Math.min(combo + 0.5, 5);
+    } else {
+      combo = 1;
+    }
+    lastKillTime = currentTime;
+    
+    score += Math.floor(points * combo);
+    scoreDisplay.textContent = `Score: ${score}`;
+    comboDisplay.textContent = `Combo: x${combo.toFixed(1)}`;
+    
+    const popup = document.createElement('div');
+    popup.className = 'hit-popup';
+    popup.textContent = `+${Math.floor(points * combo)}`;
+    popup.style.left = '50%';
+    popup.style.top = '40%';
+    document.body.appendChild(popup);
+    
+    setTimeout(() => {
+      document.body.removeChild(popup);
+    }, 1000);
   }
-  let bullets = []; 
-  let enemies = [];
+
   function shoot() { 
     if (!canShoot) return; 
     const weapon = weapons[currentWeaponIndex]; 
@@ -497,152 +1994,55 @@ function initGame() {
     }, weapon.fireRate); 
   }
 
-  // --- ENEMY SPAWNING ---
-  function createEnemy() {
-    let spawnPosition;
-    let attempts = 0;
-    do {
-      spawnPosition = {
-        x: (Math.random() - 0.5) * 100,
-        z: (Math.random() - 0.5) * 100
-      };
-      attempts++;
-    } while (checkCollision(spawnPosition.x, spawnPosition.z) && attempts < 50);
+  function updateWeaponDisplay() { 
+    weaponDisplay.textContent = `Weapon: ${weapons[currentWeaponIndex].name}`; 
+  }
+
+  function createHitEffect(position) {
+    const particleCount = 20;
+    const particles = [];
     
-    if (attempts < 50) {
-      const enemy = createEnemyModel();
-      enemy.position.set(spawnPosition.x, 1, spawnPosition.z);
-      enemy.originalPosition = enemy.position.clone();
-      scene.add(enemy);
-      enemies.push(enemy);
+    for (let i = 0; i < particleCount; i++) {
+      const particle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8),
+        new THREE.MeshBasicMaterial({ 
+          color: new THREE.Color().setHSL(0.05 + Math.random() * 0.05, 1, 0.5 + Math.random() * 0.5)
+        })
+      );
+      particle.position.copy(position);
+      
+      const velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.8,
+        Math.random() * 0.8,
+        (Math.random() - 0.5) * 0.8
+      );
+      
+      particle.velocity = velocity;
+      particle.lifetime = 30 + Math.random() * 20;
+      
+      scene.add(particle);
+      particles.push(particle);
     }
-  }
-
-  for (let i = 0; i < 10; i++) { 
-    createEnemy(); 
-  }
-  let enemyBullets = [];
-
-  // --- ENEMY AI BEHAVIOR ---
-  function updateEnemyAI(enemy, currentTime) {
-    const playerDistance = camera.position.distanceTo(enemy.position);
     
-    // State machine
-    switch(enemy.state) {
-      case 'patrol':
-        // Random patrol movement
-        if (!enemy.targetPosition || enemy.position.distanceTo(enemy.targetPosition) < 2) {
-          const angle = Math.random() * Math.PI * 2;
-          const distance = 10 + Math.random() * 10;
-          enemy.targetPosition = enemy.originalPosition.clone().add(
-            new THREE.Vector3(Math.cos(angle) * distance, 0, Math.sin(angle) * distance)
-          );
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const particle = particles[i];
+        particle.position.add(particle.velocity);
+        particle.velocity.y -= 0.02;
+        particle.lifetime--;
+        
+        if (particle.lifetime <= 0) {
+          scene.remove(particle);
+          particles.splice(i, 1);
         }
-        
-        // Move towards target position
-        const patrolDirection = new THREE.Vector3();
-        patrolDirection.subVectors(enemy.targetPosition, enemy.position);
-        patrolDirection.y = 0;
-        patrolDirection.normalize();
-        
-        const nextPos = enemy.position.clone().add(patrolDirection.multiplyScalar(enemy.speed));
-        if (!checkCollision(nextPos.x, nextPos.z)) {
-          enemy.position.add(patrolDirection.multiplyScalar(enemy.speed));
-        }
-        
-        // Switch to combat if player is close
-        if (playerDistance < 30) {
-          enemy.state = 'combat';
-          enemy.lastStateChange = currentTime;
-        }
-        break;
-        
-      case 'combat':
-        // Combat behavior
-        const direction = new THREE.Vector3();
-        direction.subVectors(camera.position, enemy.position);
-        direction.y = 0;
-        direction.normalize();
-        
-        // Check if need to take cover
-        if (enemy.health < enemy.maxHealth * 0.5 && Math.random() < 0.01) {
-          enemy.state = 'cover';
-          enemy.coverPosition = findCoverPosition(enemy);
-          enemy.lastStateChange = currentTime;
-        }
-        
-        // Move towards player but maintain distance
-        if (playerDistance > 15) {
-          const nextPos = enemy.position.clone().add(direction.multiplyScalar(enemy.speed * 1.5));
-          if (!checkCollision(nextPos.x, nextPos.z)) {
-            enemy.position.add(direction.multiplyScalar(enemy.speed * 1.5));
-          }
-        } else if (playerDistance < 10) {
-          const nextPos = enemy.position.clone().add(direction.multiplyScalar(-enemy.speed));
-          if (!checkCollision(nextPos.x, nextPos.z)) {
-            enemy.position.add(direction.multiplyScalar(-enemy.speed));
-          }
-        }
-        
-        enemy.rotation.y = Math.atan2(direction.x, direction.z);
-        
-        // Shoot at player
-        if (playerDistance < enemy.shootingRange && currentTime - enemy.lastShotTime > enemy.fireRate) {
-          const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-          bullet.position.copy(enemy.position);
-          bullet.position.y = 2.5;
-          const bulletDirection = new THREE.Vector3();
-          bulletDirection.subVectors(camera.position, enemy.position).normalize();
-          bullet.velocity = bulletDirection.multiplyScalar(0.15);
-          scene.add(bullet);
-          enemyBullets.push(bullet);
-          enemy.lastShotTime = currentTime;
-        }
-        
-        // Return to patrol if player is far
-        if (playerDistance > 50) {
-          enemy.state = 'patrol';
-          enemy.lastStateChange = currentTime;
-        }
-        break;
-        
-      case 'cover':
-        // Move to cover
-        if (enemy.coverPosition) {
-          const coverDirection = new THREE.Vector3();
-          coverDirection.subVectors(enemy.coverPosition, enemy.position);
-          coverDirection.y = 0;
-          coverDirection.normalize();
-          
-          const nextPos = enemy.position.clone().add(coverDirection.multiplyScalar(enemy.speed * 2));
-          if (!checkCollision(nextPos.x, nextPos.z)) {
-            enemy.position.add(coverDirection.multiplyScalar(enemy.speed * 2));
-          }
-          
-          if (enemy.position.distanceTo(enemy.coverPosition) < 2) {
-            enemy.state = 'combat';
-            enemy.lastStateChange = currentTime;
-          }
-        }
-        break;
-    }
-  }
-
-  function findCoverPosition(enemy) {
-    // Find nearby cover position
-    const coverPositions = [
-      { x: enemy.position.x + 10, z: enemy.position.z },
-      { x: enemy.position.x - 10, z: enemy.position.z },
-      { x: enemy.position.x, z: enemy.position.z + 10 },
-      { x: enemy.position.x, z: enemy.position.z - 10 }
-    ];
-    
-    for (const pos of coverPositions) {
-      if (!checkCollision(pos.x, pos.z)) {
-        return new THREE.Vector3(pos.x, 0, pos.z);
+      }
+      
+      if (particles.length > 0) {
+        requestAnimationFrame(updateParticles);
       }
     }
-    return enemy.originalPosition.clone();
+    
+    updateParticles();
   }
 
   // --- EVENT LISTENERS ---
@@ -650,25 +2050,34 @@ function initGame() {
     playerHealth = maxHealth; 
     score = 0;
     combo = 1;
+    playerMedikits = 3; // Start with 3 medikits
     updateHealthUI(); 
     updateScore(0);
+    updateMedikitCounter();
     gameOverScreen.style.display = 'none';
     finalScoreDisplay.style.display = 'none';
     controls.lock(); 
   });
+  
   document.addEventListener('mousedown', (event) => { if (event.button === 0 && controls.isLocked) { shoot(); } });
+  
   document.addEventListener('keydown', (e) => { 
     if (e.code === 'Digit1') { currentWeaponIndex = 0; updateWeaponDisplay(); } 
     if (e.code === 'Digit2') { currentWeaponIndex = 1; updateWeaponDisplay(); } 
     if (e.code === 'Digit3') { currentWeaponIndex = 2; updateWeaponDisplay(); } 
+    if (e.code === 'KeyE') { useMedikit(); } 
   });
+  
   const keys = {}; 
   document.addEventListener("keydown", e => keys[e.code] = true); 
   document.addEventListener("keyup", e => keys[e.code] = false);
 
-  // --- MOVEMENT & ANIMATION LOOP ---
+  // --- ANIMATION LOOP ---
   const moveSpeed = 0.3; 
   let lastDamageTime = 0;
+  let bossSpawnTimer = 0;
+  let enemySpawnTimer = 0;
+  let medikitSpawnTimer = 0;
   function animate() {
     requestAnimationFrame(animate);
     if (controls.isLocked) {
@@ -684,33 +2093,78 @@ function initGame() {
       if (keys["KeyA"]) moveVector.sub(right); 
       if (keys["KeyD"]) moveVector.add(right);
       
-      // Apply movement with collision detection
       if (moveVector.length() > 0) {
         moveVector.normalize();
         const nextPos = camera.position.clone().add(moveVector.multiplyScalar(moveSpeed));
         
-        // Check collision before moving
+        // Enhanced collision detection for player
         if (!checkCollision(nextPos.x, nextPos.z)) {
           camera.position.copy(nextPos);
         }
       }
       
-      const modelOffset = new THREE.Vector3(0, -2.5, 2);
-      const desiredModelPos = camera.position.clone().add(modelOffset.applyQuaternion(camera.quaternion));
-      playerModel.position.lerp(desiredModelPos, 0.2);
-      playerModel.rotation.y = camera.rotation.y;
-      playerModel.rightArm.rotation.x = camera.rotation.x;
+      handsAndGun.position.copy(camera.position);
+      handsAndGun.rotation.copy(camera.rotation);
+      handsAndGun.translateX(-0.2);
+      handsAndGun.translateY(-0.3);
+      
+      if (!canShoot) {
+        firstPersonModel.leftHand.rotation.z = -0.1;
+        firstPersonModel.rightHand.rotation.z = 0.1;
+      } else {
+        firstPersonModel.leftHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.leftHand.rotation.z, 0, 0.1);
+        firstPersonModel.rightHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.rightHand.rotation.z, 0, 0.1);
+      }
       
       const currentTime = Date.now();
       
-      // Update enemy AI
       for (const enemy of enemies) {
         updateEnemyAI(enemy, currentTime);
       }
       
-      // Spawn new enemies periodically
-      if (enemies.length < 15 && Math.random() < 0.005) {
+      // Spawn more regular enemies
+      enemySpawnTimer += 16;
+      const regularEnemies = enemies.filter(e => !e.isBoss && !e.isMinion).length;
+      if (regularEnemies < 40 && enemySpawnTimer > 500) {
         createEnemy();
+        enemySpawnTimer = 0;
+      }
+      
+      // Spawn demon king periodically
+      bossSpawnTimer += 16;
+      if (!demonKing && bossSpawnTimer > 25000) {
+        createDemonKing();
+        bossSpawnTimer = 0;
+      }
+      
+      // Spawn medikits periodically
+      medikitSpawnTimer += 16;
+      if (medikits.length < 20 && medikitSpawnTimer > 3000) { // Spawn medikit every 3 seconds
+        spawnMedikit();
+        medikitSpawnTimer = 0;
+      }
+      
+      // Update counters
+      updateEnemyCounter();
+      updateMedikitCounter();
+    }
+    
+    // Update medikits
+    for (let i = medikits.length - 1; i >= 0; i--) {
+      const medikit = medikits[i];
+      
+      // Floating animation
+      medikit.position.y = 0.5 + Math.sin(Date.now() * 0.001 + medikit.floatOffset) * 0.2;
+      medikit.rotation.y += medikit.rotationSpeed;
+      
+      // Check pickup
+      const distance = camera.position.distanceTo(medikit.position);
+      if (distance < 2) {
+        playerMedikits++;
+        scene.remove(medikit);
+        medikits.splice(i, 1);
+        showMedikitNotification();
+        updateMedikitCounter();
       }
     }
     
@@ -719,28 +2173,65 @@ function initGame() {
       const bullet = bullets[i];
       bullet.position.add(bullet.velocity);
       
-      // Check bullet-enemy collision
       for (let j = enemies.length - 1; j >= 0; j--) {
         const enemy = enemies[j];
-        if (bullet.position.distanceTo(enemy.position) < 1.5) {
-          // Create hit effect
+        let hitRadius = 1.5;
+        
+        if (enemy.isDemonKing) {
+          hitRadius = 3.0; // Bigger hit radius for demon king
+        } else if (enemy.isMinion) {
+          hitRadius = 1.0; // Smaller hit radius for minions
+        } else if (enemy.isBoss) {
+          hitRadius = 2.0; // Regular boss hit radius
+        }
+        
+        if (bullet.position.distanceTo(enemy.position) < hitRadius) {
           createHitEffect(enemy.position);
           
-          // Enemy dies immediately on hit
-          scene.remove(enemy);
-          enemies.splice(j, 1);
+          if (enemy.isDemonKing) {
+            enemy.health -= bullet.damage;
+            updateBossHealthUI();
+            
+            if (enemy.health <= 0) {
+              scene.remove(enemy);
+              enemies.splice(j, 1);
+              updateScore(1000); // Demon king gives more points
+              demonKing = null;
+              currentBoss = null;
+              bossName.style.display = 'none';
+              bossHealthContainer.style.display = 'none';
+            }
+          } else if (enemy.isMinion) {
+            enemy.health -= bullet.damage;
+            
+            if (enemy.health <= 0) {
+              scene.remove(enemy);
+              enemies.splice(j, 1);
+              updateScore(50); // Minions give fewer points
+            }
+          } else if (enemy.isBoss) {
+            enemy.health -= bullet.damage;
+            
+            if (enemy.health <= 0) {
+              scene.remove(enemy);
+              enemies.splice(j, 1);
+              updateScore(500);
+              currentBoss = null;
+              bossName.style.display = 'none';
+              bossHealthContainer.style.display = 'none';
+            }
+          } else {
+            scene.remove(enemy);
+            enemies.splice(j, 1);
+            updateScore(100);
+          }
           
-          // Update score
-          updateScore(100);
-          
-          // Remove bullet
           scene.remove(bullet);
           bullets.splice(i, 1);
           break;
         }
       }
       
-      // Remove bullets that are too far
       if (bullet && bullet.position.length() > 100) {
         scene.remove(bullet);
         bullets.splice(i, 1);
@@ -753,7 +2244,15 @@ function initGame() {
       bullet.position.add(bullet.velocity);
       
       if (bullet.position.distanceTo(camera.position) < 1) {
-        takeDamage(10);
+        let damage = 15;
+        
+        if (bullet.isDemonKingProjectile) {
+          damage = 30; // Demon king projectiles do more damage
+        } else if (bullet.isMinionProjectile) {
+          damage = 10; // Minion projectiles do less damage
+        }
+        
+        takeDamage(damage);
         scene.remove(bullet);
         enemyBullets.splice(i, 1);
       } else if (bullet.position.length() > 100) {
@@ -765,9 +2264,23 @@ function initGame() {
     // Melee damage
     const currentTime = Date.now();
     for (const enemy of enemies) {
-      if (camera.position.distanceTo(enemy.position) < 2) {
+      let meleeRange = 2;
+      let damage = 10;
+      
+      if (enemy.isDemonKing) {
+        meleeRange = 4;
+        damage = 30;
+      } else if (enemy.isMinion) {
+        meleeRange = 1.5;
+        damage = 5;
+      } else if (enemy.isBoss) {
+        meleeRange = 3;
+        damage = 20;
+      }
+      
+      if (camera.position.distanceTo(enemy.position) < meleeRange) {
         if (currentTime - lastDamageTime > 1000) {
-          takeDamage(10);
+          takeDamage(damage);
           lastDamageTime = currentTime;
         }
       }
@@ -778,12 +2291,14 @@ function initGame() {
   
   updateHealthUI(); 
   updateWeaponDisplay(); 
+  updateEnemyCounter();
+  updateMedikitCounter();
   animate();
   
-  // Lock controls when game starts
   setTimeout(() => {
+    loadingScreen.style.display = 'none';
     controls.lock();
-  }, 1000);
+  }, 500);
   
   window.addEventListener('resize', () => { 
     camera.aspect = window.innerWidth / window.innerHeight; 
