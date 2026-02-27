@@ -91,6 +91,7 @@
       pointer-events: none; 
       z-index: 10; 
       text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+      transition: opacity 0.2s ease;
     }
     
     #instructions { 
@@ -394,6 +395,125 @@
       display: none;
       z-index: 100;
     }
+
+    /* --- PAUSE MENU --- */
+    #pause-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: none; /* Hidden by default */
+      justify-content: center;
+      align-items: center;
+      z-index: 2001; /* On top of everything */
+      flex-direction: column;
+    }
+    
+    #pause-menu h2 {
+      color: #ff6b35;
+      font-size: 48px;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 0 #000;
+    }
+    
+    .pause-menu-button {
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 20px;
+      background: linear-gradient(45deg, #ff6b35, #f7931e);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      color: white;
+      font-weight: bold;
+      min-width: 200px;
+    }
+    
+    .pause-menu-button:hover {
+      background: linear-gradient(45deg, #f7931e, #ff6b35);
+      transform: scale(1.05);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    /* --- SCOPE DOT --- */
+    #scope-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      background-color: red;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 11; /* Above crosshair */
+      display: none; /* Hidden by default */
+      box-shadow: 0 0 5px 1px rgba(255, 0, 0, 0.7);
+    }
+
+    /* --- WEAPON CONTAINER & IMAGES --- */
+    #weapon-container {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        pointer-events: none;
+        z-index: 5;
+        transition: transform 0.05s ease-out, opacity 0.2s ease;
+    }
+
+    /* --- Individual Weapon Image Styles --- */
+    .weapon-img {
+        position: absolute;
+        bottom: 150px;
+        left: 50%;
+        transform: translateX(-50%);
+        pointer-events: none;
+        display: none; /* Hidden by default */
+    }
+
+    #pistol-img {
+        width: 350px;
+        bottom: -10px;
+    }
+
+    #shotgun-img {
+        width: 450px;
+        bottom: -5px;
+    }
+
+    #rifle-img {
+        width: 400px;
+        bottom: -5px;
+    }
+
+    #rocket-launcher-img {
+        width: 500px;
+        bottom: 140px;
+    }
+    
+    #flamethrower-img {
+        width: 420px;
+        bottom: 165px;
+    }
+
+    /* --- 2D MUZZLE FLASH --- */
+    #muzzle-flash {
+      position: absolute;
+      bottom: -100px; /* Default position, will be updated by JS */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 120px;
+      display: none; /* Hidden by default */
+      pointer-events: none; /* Ensures it doesn't block clicks */
+      z-index: 20; /* Appear on top of the gun */
+    }
   </style>
 </head>
 <body>
@@ -418,8 +538,9 @@
 
 <!-- Game Screen -->
 <div id="game-screen">
-  <div id="instructions">WASD to move, Mouse to look, Click to shoot, 1-5 to switch weapons, E to use medikit, B to open shop</div>
+  <div id="instructions">WASD to move, Mouse to look, Left-Click to shoot, Right-Click to scope (Rifle), 1-5 to switch weapons, E to use medikit, B to open shop, Esc to pause</div>
   <div id="crosshair">+</div>
+  <div id="scope-dot"></div>
   <div id="hud">
     <div>Health</div>
     <div id="health-bar-container"><div id="health-bar"></div></div>
@@ -455,6 +576,28 @@
   <div id="upgrade-list"></div>
 </div>
 
+<!-- WEAPON CONTAINER -->
+<div id="weapon-container">
+  <!-- IMPORTANT: Replace the src with your local image paths -->
+  <img id="pistol-img" class="weapon-img" src="image/41061a1c435b0001aaae0378bdeb0608.png" alt="Pistol">
+  <img id="shotgun-img" class="weapon-img" src="image/67c34fa8113026cc50555bfee180eb88.png" alt="Shotgun">
+  <img id="rifle-img" class="weapon-img" src="image/f9c81650038c6074e1b445d40e985fe4.png" alt="Rifle">
+  <img id="rocket-launcher-img" class="weapon-img" src="https://i.imgur.com/8lG7CgS.png" alt="Rocket Launcher">
+  <img id="flamethrower-img" class="weapon-img" src="https://i.imgur.com/5qF5EzB.png" alt="Flamethrower">
+
+  <!-- MUZZLE FLASH IMAGE -->
+  <img id="muzzle-flash" src="image/5888c6febc2fc2ef3a1860d5.png">
+</div>
+
+<!-- Pause Menu -->
+<div id="pause-menu">
+  <h2>PAUSED</h2>
+  <button id="resume-button" class="pause-menu-button">RESUME</button>
+  <button id="new-game-button" class="pause-menu-button">NEW GAME</button>
+  <button id="quit-button" class="pause-menu-button">QUIT</button>
+</div>
+
+
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
 
 <script type="module">
@@ -468,6 +611,27 @@ const startButton = document.getElementById('start-button');
 const loadingScreen = document.getElementById('loading-screen');
 const storyDisplay = document.getElementById('story-display');
 const waveDisplay = document.getElementById('wave-display');
+const muzzleFlashElement = document.getElementById('muzzle-flash');
+const weaponContainer = document.getElementById('weapon-container'); // Get weapon container
+const scopeDot = document.getElementById('scope-dot');
+const crosshair = document.getElementById('crosshair');
+
+// --- PAUSE MENU ELEMENTS ---
+const pauseMenu = document.getElementById('pause-menu');
+const resumeButton = document.getElementById('resume-button');
+const newGameButton = document.getElementById('new-game-button');
+const quitButton = document.getElementById('quit-button');
+
+
+// Get all weapon image elements
+const pistolImg = document.getElementById('pistol-img');
+const shotgunImg = document.getElementById('shotgun-img');
+const rifleImg = document.getElementById('rifle-img');
+const rocketLauncherImg = document.getElementById('rocket-launcher-img');
+const flamethrowerImg = document.getElementById('flamethrower-img');
+
+const weaponImages = [pistolImg, shotgunImg, rifleImg, rocketLauncherImg, flamethrowerImg];
+
 
 startButton.addEventListener('click', () => {
   menuScreen.style.opacity = '0';
@@ -919,8 +1083,8 @@ function initGame() {
     // Store animation references
     model.leftUpperLeg = leftUpperLeg;
     model.leftLowerLeg = leftLowerLeg;
-    model.rightUpperLeg = rightUpperLeg;
-    model.rightLowerLeg = rightLowerLeg;
+    model.rightUpperLeg = rightUpperArm;
+    model.rightLowerLeg = rightLowerArm;
     model.leftUpperArm = leftUpperArm;
     model.leftLowerArm = leftLowerArm;
     model.rightUpperArm = rightUpperArm;
@@ -1127,8 +1291,8 @@ function initGame() {
     // Store animation references
     model.leftUpperLeg = leftUpperLeg;
     model.leftLowerLeg = leftLowerLeg;
-    model.rightUpperLeg = rightUpperLeg;
-    model.rightLowerLeg = rightLowerLeg;
+    model.rightUpperLeg = rightUpperArm;
+    model.rightLowerLeg = rightLowerArm;
     model.leftUpperArm = leftUpperArm;
     model.leftLowerArm = leftLowerArm;
     model.rightUpperArm = rightUpperArm;
@@ -1341,58 +1505,6 @@ function initGame() {
     model.traverse(child => { if (child instanceof THREE.Mesh) { child.castShadow = true; } });
     return model;
   }
-
-  // --- FIRST PERSON HANDS AND GUN ---
-  const handsAndGun = new THREE.Group();
-  scene.add(handsAndGun);
-  
-  function createFirstPersonHands() {
-    const hands = new THREE.Group();
-    const handMaterial = createPBRMaterial({ color: 0xfdbcb4, roughness: 0.7 });
-    
-    const leftHand = new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, 0.3, 0.8),
-      handMaterial
-    );
-    leftHand.position.set(-0.25, -0.15, -0.2);
-    hands.add(leftHand);
-    
-    const rightHand = new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, 0.3, 0.8),
-      handMaterial
-    );
-    rightHand.position.set(0.25, -0.15, -0.2);
-    hands.add(rightHand);
-    
-    // Gun
-    const gun = new THREE.Group();
-    const gunMaterial = createPBRMaterial({ color: 0x333333, roughness: 0.2, metalness: 0.8 });
-    
-    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 16), gunMaterial);
-    barrel.rotation.z = Math.PI / 2;
-    barrel.position.z = 0.5;
-    gun.add(barrel);
-    
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.7), gunMaterial);
-    body.position.z = 0.1;
-    gun.add(body);
-    
-    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.2), gunMaterial);
-    grip.position.set(0, -0.3, -0.1);
-    gun.add(grip);
-    
-    gun.position.set(0, -0.1, 0.3);
-    hands.add(gun);
-    
-    hands.currentGun = gun;
-    hands.leftHand = leftHand;
-    hands.rightHand = rightHand;
-    
-    return hands;
-  }
-  
-  const firstPersonModel = createFirstPersonHands();
-  handsAndGun.add(firstPersonModel);
 
   // --- VILLAGE ENVIRONMENT ---
   function createSky() {
@@ -1996,6 +2108,7 @@ function initGame() {
   let canShoot = true;
   let currentBoss = null;
   let demonKing = null;
+  let isPaused = false; // Pause state
   const weapons = [
     { 
       name: 'Pistol', 
@@ -2005,7 +2118,8 @@ function initGame() {
       color: 0xffff00,
       ammo: 999,
       reloadTime: 0,
-      currentAmmo: 999
+      currentAmmo: 999,
+      recoil: 5
     },
     { 
       name: 'Rifle', 
@@ -2015,7 +2129,9 @@ function initGame() {
       color: 0xff0000,
       ammo: 30,
       reloadTime: 2000,
-      currentAmmo: 30
+      currentAmmo: 30,
+      recoil: 3,
+      hasScope: true
     },
     { 
       name: 'Shotgun', 
@@ -2025,7 +2141,8 @@ function initGame() {
       color: 0x00ff00,
       ammo: 8,
       reloadTime: 3000,
-      currentAmmo: 8
+      currentAmmo: 8,
+      recoil: 12
     },
     { 
       name: 'Rocket Launcher', 
@@ -2036,7 +2153,8 @@ function initGame() {
       ammo: 5,
       reloadTime: 4000,
       currentAmmo: 5,
-      explosive: true
+      explosive: true,
+      recoil: 15
     },
     { 
       name: 'Flamethrower', 
@@ -2047,7 +2165,8 @@ function initGame() {
       ammo: 100,
       reloadTime: 0,
       currentAmmo: 100,
-      continuous: true
+      continuous: true,
+      recoil: 2
     }
   ];
   let currentWeaponIndex = 0;
@@ -2059,6 +2178,11 @@ function initGame() {
   const enemyCounter = document.getElementById('enemy-counter');
   const medikitCounter = document.getElementById('medikit-counter');
   
+  // --- SCOPE VARIABLES ---
+  let isScopedIn = false;
+  const originalFov = camera.fov;
+  const scopeFov = 50; // Zoomed-in Field of View
+
   // Wave system
   let currentWave = 1;
   let enemiesInWave = 5;
@@ -2578,6 +2702,7 @@ function initGame() {
       finalScoreDisplay.textContent = `Final Score: ${score}`; 
       finalScoreDisplay.style.display = 'block'; 
       controls.unlock(); 
+      isPaused = true; // Pause the game on game over
       
       const restartButton = document.createElement('button');
       restartButton.textContent = 'RESTART';
@@ -2627,6 +2752,62 @@ function initGame() {
     }, 1000);
   }
 
+  // --- 2D GUN SWAY AND RECOIL ---
+  let gunRecoil = 0;
+  let targetGunRotation = { x: 0, y: 0 };
+  let currentGunRotation = { x: 0, y: 0 };
+  
+  function switchWeaponUI(newIndex) {
+    // Hide all weapon images
+    weaponImages.forEach(img => img.style.display = 'none');
+
+    // Show the new weapon image
+    if (weaponImages[newIndex]) {
+      weaponImages[newIndex].style.display = 'block';
+      
+      // Update muzzle flash position based on the new weapon's barrel
+      const currentWeaponImg = weaponImages[newIndex];
+      const imgRect = currentWeaponImg.getBoundingClientRect();
+      const barrelOffset = imgRect.height * 0.8; // Estimate barrel position
+      muzzleFlashElement.style.bottom = `${window.innerHeight - imgRect.top + barrelOffset}px`;
+    }
+
+    // --- SCOPE LOGIC ---
+    // Exit scope if the new weapon doesn't have one
+    if (!weapons[newIndex].hasScope && isScopedIn) {
+        isScopedIn = false;
+        updateScopeState();
+    }
+  }
+
+  function updateScopeState() {
+    if (isScopedIn) {
+        crosshair.style.opacity = '0';
+        scopeDot.style.display = 'block';
+        weaponContainer.style.opacity = '0';
+    } else {
+        crosshair.style.opacity = '1';
+        scopeDot.style.display = 'none';
+        weaponContainer.style.opacity = '1';
+    }
+  }
+
+  function togglePauseMenu() {
+    if (playerHealth <= 0) return; // Don't pause if game is over
+
+    isPaused = !isPaused;
+
+    if (isPaused) {
+      // Pausing
+      pauseMenu.style.display = 'flex';
+      controls.unlock(); // Unlock mouse to interact with menu
+    } else {
+      // Resuming
+      pauseMenu.style.display = 'none';
+      controls.lock(); // Re-lock mouse for gameplay
+    }
+  }
+
   function shoot() { 
     if (!canShoot) return; 
     
@@ -2643,6 +2824,15 @@ function initGame() {
       weapon.currentAmmo--;
       updateAmmoDisplay();
     }
+    
+    // --- 2D GUN RECOIL ---
+    gunRecoil = weapon.recoil; // Use recoil from weapon object
+
+    // --- 2D MUZZLE FLASH ---
+    muzzleFlashElement.style.display = 'block';
+    setTimeout(() => {
+        muzzleFlashElement.style.display = 'none';
+    }, 50); 
     
     const pelletCount = weapon.name === 'Shotgun' ? (weapon.pelletCount || 5) : 1; 
     const spreadAngle = 0.05; 
@@ -2663,10 +2853,6 @@ function initGame() {
       scene.add(bullet); 
       bullets.push(bullet); 
     } 
-    
-    // Visual feedback for shooting
-    firstPersonModel.leftHand.rotation.z = -0.2;
-    firstPersonModel.rightHand.rotation.z = 0.2;
     
     canShoot = false; 
     setTimeout(() => { 
@@ -2715,6 +2901,10 @@ function initGame() {
     controls.lock(); 
     showStoryMessage("The village needs your help! Defend it from the demonic invasion!");
     showWaveMessage(currentWave);
+    
+    // Show 2D gun when game starts
+    weaponContainer.style.display = 'block';
+    switchWeaponUI(currentWeaponIndex); // Show the initial weapon
   }); 
   
   document.addEventListener('mousedown', (event) => { 
@@ -2722,16 +2912,60 @@ function initGame() {
       shoot(); 
     } 
   });
+
+  // --- PAUSE TOGGLE LISTENER ---
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape') {
+      togglePauseMenu();
+    }
+  });
+
+  // --- PAUSE MENU BUTTON LISTENERS ---
+  resumeButton.addEventListener('click', () => {
+    togglePauseMenu();
+  });
+
+  newGameButton.addEventListener('click', () => {
+    location.reload();
+  });
+
+  quitButton.addEventListener('click', () => {
+    // Note: window.close() works best if the script opened the window.
+    // For tabs opened manually, the browser may block this.
+    window.close();
+  });
   
   document.addEventListener('keydown', (e) => { 
-    if (e.code === 'Digit1') { currentWeaponIndex = 0; updateWeaponDisplay(); } 
-    if (e.code === 'Digit2') { currentWeaponIndex = 1; updateWeaponDisplay(); } 
-    if (e.code === 'Digit3') { currentWeaponIndex = 2; updateWeaponDisplay(); } 
-    if (e.code === 'Digit4') { currentWeaponIndex = 3; updateWeaponDisplay(); } 
-    if (e.code === 'Digit5') { currentWeaponIndex = 4; updateWeaponDisplay(); } 
+    if (e.code === 'Digit1') { 
+      currentWeaponIndex = 0; 
+      updateWeaponDisplay();
+      switchWeaponUI(currentWeaponIndex);
+    } 
+    if (e.code === 'Digit2') { 
+      currentWeaponIndex = 1; 
+      updateWeaponDisplay();
+      switchWeaponUI(currentWeaponIndex);
+    } 
+    if (e.code === 'Digit3') { 
+      currentWeaponIndex = 2; 
+      updateWeaponDisplay();
+      switchWeaponUI(currentWeaponIndex);
+    } 
+    if (e.code === 'Digit4') { 
+      currentWeaponIndex = 3; 
+      updateWeaponDisplay();
+      switchWeaponUI(currentWeaponIndex);
+    } 
+    if (e.code === 'Digit5') { 
+      currentWeaponIndex = 4; 
+      updateWeaponDisplay();
+      switchWeaponUI(currentWeaponIndex);
+    } 
     if (e.code === 'KeyE') { useMedikit(); } 
     if (e.code === 'KeyR') { reloadWeapon(); }
-    if (e.code === 'KeyB') { openUpgradeShop(); }
+    if (e.code === 'KeyB') { 
+      if (!isPaused) openUpgradeShop();
+    }
   });
   
   // Shop close button
@@ -2782,7 +3016,9 @@ function initGame() {
   
   function animate() {
     requestAnimationFrame(animate);
-    if (controls.isLocked) {
+    
+    // Only run game logic if not paused
+    if (!isPaused && controls.isLocked) {
       const moveVector = new THREE.Vector3(); 
       const forward = new THREE.Vector3(); 
       const right = new THREE.Vector3();
@@ -2805,20 +3041,37 @@ function initGame() {
         }
       }
       
-      handsAndGun.position.copy(camera.position);
-      handsAndGun.rotation.copy(camera.rotation);
-      handsAndGun.translateX(-0.2);
-      handsAndGun.translateY(-0.3);
-      
-      // Animate hands
-      if (!canShoot) {
-        firstPersonModel.leftHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.leftHand.rotation.z, -0.1, 0.3);
-        firstPersonModel.rightHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.rightHand.rotation.z, 0.1, 0.3);
-      } else {
-        firstPersonModel.leftHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.leftHand.rotation.z, 0, 0.1);
-        firstPersonModel.rightHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.rightHand.rotation.z, 0, 0.1);
+      // --- 2D GUN SWAY AND RECOIL UPDATE ---
+      if (!isScopedIn) {
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
+        
+        targetGunRotation.y = -cameraDirection.x * 0.05; // Horizontal sway
+        targetGunRotation.x = -cameraDirection.y * 0.05; // Vertical sway
+
+        // Apply recoil
+        if (gunRecoil > 0) {
+          targetGunRotation.x -= gunRecoil * 0.5;
+          gunRecoil *= 0.9; // Smoothly reduce recoil
+        }
+
+        // Smoothly interpolate to target rotation
+        currentGunRotation.x += (targetGunRotation.x - currentGunRotation.x) * 0.1;
+        currentGunRotation.y += (targetGunRotation.y - currentGunRotation.y) * 0.1;
+
+        // Apply the transformation to the 2D gun container
+        weaponContainer.style.transform = `
+          translateX(-50%) 
+          translateY(${currentGunRotation.x}px) 
+          rotateX(${currentGunRotation.x}deg) 
+          rotateY(${currentGunRotation.y}deg)
+        `;
       }
-      
+
+      // --- SMOOTH ZOOM ---
+      const targetFov = isScopedIn ? scopeFov : originalFov;
+      camera.fov += (targetFov - camera.fov) * 0.1; // Smooth transition
+
       const currentTime = Date.now();
       
       for (const enemy of enemies) {
