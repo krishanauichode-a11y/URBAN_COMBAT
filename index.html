@@ -3,7 +3,13 @@
 <head>
   <title>Urban Combat TPS - Village Battle</title>
   <style>
-    body { margin: 0; overflow: hidden; background: black; font-family: sans-serif; }
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      background: black; 
+      font-family: 'Arial', sans-serif; 
+      cursor: crosshair;
+    }
     
     /* Menu Screen Styles */
     #menu-screen {
@@ -25,25 +31,47 @@
     #menu-title {
       font-size: 48px;
       color: white;
-      text-shadow: 3px 3px 0 #000;
+      text-shadow: 3px 3px 0 #000, 0 0 20px rgba(255, 107, 53, 0.8);
       margin-bottom: 30px;
       font-family: 'Courier New', monospace;
       letter-spacing: 2px;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    #story-text {
+      max-width: 600px;
+      padding: 20px;
+      background-color: rgba(0, 0, 0, 0.8);
+      border: 2px solid #ff6b35;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
     }
     
     #start-button {
       padding: 15px 40px;
       font-size: 24px;
-      background-color: rgba(255, 255, 255, 0.8);
+      background: linear-gradient(45deg, #ff6b35, #f7931e);
       border: none;
       border-radius: 5px;
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      color: white;
+      font-weight: bold;
     }
     
     #start-button:hover {
-      background-color: white;
+      background: linear-gradient(45deg, #f7931e, #ff6b35);
       transform: scale(1.05);
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
     }
@@ -53,20 +81,132 @@
       display: none;
     }
     
-    #crosshair { position: absolute; top: 50%; left: 50%; color: white; font-size: 30px; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
-    #instructions { position: absolute; top: 10px; width: 100%; text-align: center; color: white; z-index: 100; }
-    #hud { position: absolute; bottom: 20px; left: 20px; color: white; z-index: 100; }
-    #health-bar-container { width: 200px; height: 20px; border: 2px solid white; background-color: #555; }
-    #health-bar { width: 100%; height: 100%; background-color: #4CAF50; }
-    #weapon-display { margin-top: 10px; font-size: 20px; }
-    #score-display { margin-top: 10px; font-size: 20px; color: gold; }
-    #combo-display { margin-top: 5px; font-size: 16px; color: orange; }
-    #game-over { position: absolute; top: 50%; left: 50%; color: red; font-size: 50px; font-weight: bold; transform: translate(-50%, -50%); display: none; z-index: 200; }
-    #final-score { position: absolute; top: 60%; left: 50%; color: white; font-size: 30px; transform: translate(-50%, -50%); display: none; z-index: 200; }
-    .hit-popup { position: absolute; color: yellow; font-size: 24px; font-weight: bold; pointer-events: none; animation: fadeOut 1s forwards; z-index: 150; }
+    #crosshair { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      color: white; 
+      font-size: 30px; 
+      transform: translate(-50%, -50%); 
+      pointer-events: none; 
+      z-index: 10; 
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    }
+    
+    #instructions { 
+      position: absolute; 
+      top: 10px; 
+      width: 100%; 
+      text-align: center; 
+      color: white; 
+      z-index: 100; 
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      border-radius: 5px;
+    }
+    
+    #hud { 
+      position: absolute; 
+      bottom: 20px; 
+      left: 20px; 
+      color: white; 
+      z-index: 100; 
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    #health-bar-container { 
+      width: 200px; 
+      height: 20px; 
+      border: 2px solid white; 
+      background-color: #555; 
+      border-radius: 3px;
+    }
+    
+    #health-bar { 
+      width: 100%; 
+      height: 100%; 
+      background-color: #4CAF50; 
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    
+    #weapon-display { 
+      margin-top: 10px; 
+      font-size: 20px; 
+    }
+    
+    #score-display { 
+      margin-top: 10px; 
+      font-size: 20px; 
+      color: gold; 
+    }
+    
+    #combo-display { 
+      margin-top: 5px; 
+      font-size: 16px; 
+      color: orange; 
+    }
+    
+    #game-over { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      color: red; 
+      font-size: 50px; 
+      font-weight: bold; 
+      transform: translate(-50%, -50%); 
+      display: none; 
+      z-index: 200; 
+      text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+    }
+    
+    #final-score { 
+      position: absolute; 
+      top: 60%; 
+      left: 50%; 
+      color: white; 
+      font-size: 30px; 
+      transform: translate(-50%, -50%); 
+      display: none; 
+      z-index: 200; 
+    }
+    
+    .hit-popup { 
+      position: absolute; 
+      color: yellow; 
+      font-size: 24px; 
+      font-weight: bold; 
+      pointer-events: none; 
+      animation: fadeOut 1s forwards; 
+      z-index: 150; 
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    }
+    
     @keyframes fadeOut {
       0% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-30px); }
+    }
+    
+    /* Story Display */
+    #story-display {
+      position: absolute;
+      top: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 600px;
+      padding: 15px;
+      background-color: rgba(0, 0, 0, 0.8);
+      border: 2px solid #ff6b35;
+      border-radius: 10px;
+      color: #ffffff;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+      display: none;
+      z-index: 100;
+      box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
     }
     
     /* Boss Health Bar */
@@ -81,6 +221,7 @@
       background-color: #330000;
       display: none;
       z-index: 100;
+      border-radius: 5px;
     }
     
     #boss-health {
@@ -111,6 +252,9 @@
       color: white;
       font-size: 18px;
       z-index: 100;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
     }
     
     /* Medikit Counter */
@@ -121,26 +265,9 @@
       color: #00ff00;
       font-size: 18px;
       z-index: 100;
-    }
-    
-    /* Medikit Pickup Notification */
-    .medikit-notification {
-      position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #00ff00;
-      font-size: 24px;
-      font-weight: bold;
-      text-shadow: 2px 2px 0 #000;
-      pointer-events: none;
-      animation: medikitPulse 2s ease-out forwards;
-      z-index: 150;
-    }
-    
-    @keyframes medikitPulse {
-      0% { opacity: 1; transform: translateX(-50%) translateY(0); }
-      100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
     }
     
     /* Loading Screen */
@@ -158,6 +285,115 @@
       color: white;
       font-size: 24px;
     }
+    
+    /* Minimap */
+    #minimap-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 200px;
+      height: 200px;
+      border: 2px solid #ffffff;
+      background-color: rgba(0, 0, 0, 0.7);
+      border-radius: 5px;
+      z-index: 100;
+    }
+    
+    #minimap {
+      width: 100%;
+      height: 100%;
+      border-radius: 3px;
+    }
+    
+    /* Weapon Upgrade Shop */
+    #upgrade-shop {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      max-height: 500px;
+      background-color: rgba(0, 0, 0, 0.9);
+      border: 2px solid #ff6b35;
+      border-radius: 10px;
+      color: white;
+      padding: 20px;
+      display: none;
+      z-index: 300;
+      overflow-y: auto;
+    }
+    
+    #upgrade-shop h2 {
+      text-align: center;
+      color: #ff6b35;
+      margin-bottom: 20px;
+    }
+    
+    .upgrade-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    
+    .upgrade-item:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .upgrade-button {
+      padding: 5px 15px;
+      background-color: #ff6b35;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .upgrade-button:hover {
+      background-color: #f7931e;
+    }
+    
+    .upgrade-button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+    
+    #close-shop {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    /* Ammo Display */
+    #ammo-display {
+      margin-top: 5px;
+      font-size: 16px;
+      color: #cccccc;
+    }
+    
+    /* Wave Display */
+    #wave-display {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ff6b35;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000;
+      display: none;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
@@ -165,24 +401,39 @@
 <!-- Menu Screen -->
 <div id="menu-screen">
   <h1 id="menu-title">VILLAGE COMBAT</h1>
-  <button id="start-button">CLICK TO PLAY</button>
+  <div id="story-text">
+    <p><strong>CHAPTER 1: THE PEACEFUL VILLAGE</strong></p>
+    <p>In the quiet village of Oakhaven, life was peaceful. The villagers lived in harmony with nature, farming the land and trading with neighboring settlements. But darkness was stirring in the mountains beyond...</p>
+    
+    <p><strong>CHAPTER 2: SHADOWS FALL</strong></p>
+    <p>The Demon King Malphas, once banished to the underworld, has found a way back to the mortal realm. With his army of demonic minions, he seeks to corrupt the land and claim Oakhaven as his new kingdom of shadows.</p>
+    
+    <p><strong>CHAPTER 3: THE LAST STAND</strong></p>
+    <p>You are the village's last hope. Armed with your grandfather's vintage weapons and medical supplies, you must defend Oakhaven against the demonic invasion. The fate of the village rests in your hands...</p>
+    
+    <p><em>Press START to begin your mission...</em></p>
+  </div>
+  <button id="start-button">START MISSION</button>
 </div>
 
 <!-- Game Screen -->
 <div id="game-screen">
-  <div id="instructions">WASD to move, Mouse to look, Click to shoot, 1-3 to switch weapons, E to use medikit</div>
+  <div id="instructions">WASD to move, Mouse to look, Click to shoot, 1-5 to switch weapons, E to use medikit, B to open shop</div>
   <div id="crosshair">+</div>
   <div id="hud">
     <div>Health</div>
     <div id="health-bar-container"><div id="health-bar"></div></div>
     <div id="weapon-display">Weapon: Pistol</div>
+    <div id="ammo-display">Ammo: ∞</div>
     <div id="score-display">Score: 0</div>
     <div id="combo-display">Combo: x1</div>
   </div>
   <div id="enemy-counter">Enemies: 0</div>
   <div id="medikit-counter">Medikits: 0</div>
+  <div id="story-display"></div>
   <div id="game-over">GAME OVER</div>
   <div id="final-score">Final Score: 0</div>
+  <div id="wave-display">WAVE 1</div>
 </div>
 
 <!-- Boss Elements -->
@@ -191,6 +442,18 @@
 
 <!-- Loading Screen -->
 <div id="loading-screen">LOADING...</div>
+
+<!-- Minimap -->
+<div id="minimap-container">
+  <canvas id="minimap"></canvas>
+</div>
+
+<!-- Weapon Upgrade Shop -->
+<div id="upgrade-shop">
+  <button id="close-shop">✕</button>
+  <h2>WEAPON UPGRADES</h2>
+  <div id="upgrade-list"></div>
+</div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
 
@@ -203,6 +466,8 @@ const menuScreen = document.getElementById('menu-screen');
 const gameScreen = document.getElementById('game-screen');
 const startButton = document.getElementById('start-button');
 const loadingScreen = document.getElementById('loading-screen');
+const storyDisplay = document.getElementById('story-display');
+const waveDisplay = document.getElementById('wave-display');
 
 startButton.addEventListener('click', () => {
   menuScreen.style.opacity = '0';
@@ -230,7 +495,6 @@ function initGame() {
   renderer.shadowMap.enabled = true; 
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.autoUpdate = true;
-  // Fixed: Use outputColorSpace instead of deprecated outputEncoding
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.5;
@@ -317,7 +581,7 @@ function initGame() {
     return model;
   }
 
-  // --- RETRO-STYLE CHARACTER MODEL (Based on the image) ---
+  // --- RETRO-STYLE CHARACTER MODEL ---
   function createRetroStylePlayerModel() {
     const model = new THREE.Group();
     
@@ -1733,17 +1997,264 @@ function initGame() {
   let currentBoss = null;
   let demonKing = null;
   const weapons = [
-    { name: 'Pistol', fireRate: 300, bulletSpeed: 2, damage: 25, color: 0xffff00 }, 
-    { name: 'Rifle', fireRate: 100, bulletSpeed: 4, damage: 15, color: 0xff0000 }, 
-    { name: 'Shotgun', fireRate: 800, bulletSpeed: 3, damage: 50, color: 0x00ff00 }
+    { 
+      name: 'Pistol', 
+      fireRate: 300, 
+      bulletSpeed: 2, 
+      damage: 25, 
+      color: 0xffff00,
+      ammo: 999,
+      reloadTime: 0,
+      currentAmmo: 999
+    },
+    { 
+      name: 'Rifle', 
+      fireRate: 100, 
+      bulletSpeed: 4, 
+      damage: 15, 
+      color: 0xff0000,
+      ammo: 30,
+      reloadTime: 2000,
+      currentAmmo: 30
+    },
+    { 
+      name: 'Shotgun', 
+      fireRate: 800, 
+      bulletSpeed: 3, 
+      damage: 50, 
+      color: 0x00ff00,
+      ammo: 8,
+      reloadTime: 3000,
+      currentAmmo: 8
+    },
+    { 
+      name: 'Rocket Launcher', 
+      fireRate: 1500, 
+      bulletSpeed: 1.5, 
+      damage: 100, 
+      color: 0xff00ff,
+      ammo: 5,
+      reloadTime: 4000,
+      currentAmmo: 5,
+      explosive: true
+    },
+    { 
+      name: 'Flamethrower', 
+      fireRate: 50, 
+      bulletSpeed: 0.8, 
+      damage: 5, 
+      color: 0xff8800,
+      ammo: 100,
+      reloadTime: 0,
+      currentAmmo: 100,
+      continuous: true
+    }
   ];
   let currentWeaponIndex = 0;
   const weaponDisplay = document.getElementById('weapon-display');
+  const ammoDisplay = document.getElementById('ammo-display');
   const bossHealthContainer = document.getElementById('boss-health-container');
   const bossHealth = document.getElementById('boss-health');
   const bossName = document.getElementById('boss-name');
   const enemyCounter = document.getElementById('enemy-counter');
   const medikitCounter = document.getElementById('medikit-counter');
+  
+  // Wave system
+  let currentWave = 1;
+  let enemiesInWave = 5;
+  let waveEnemiesSpawned = 0;
+  let waveActive = true;
+  
+  // Weapon upgrade system
+  const weaponUpgrades = {
+    Pistol: [
+      { name: "Extended Magazine", cost: 500, effect: () => { weapons[0].ammo += 50; weapons[0].currentAmmo += 50; }, purchased: false },
+      { name: "Faster Reload", cost: 750, effect: () => { weapons[0].reloadTime *= 0.7; }, purchased: false },
+      { name: "Increased Damage", cost: 1000, effect: () => { weapons[0].damage *= 1.5; }, purchased: false }
+    ],
+    Rifle: [
+      { name: "Scope", cost: 600, effect: () => { weapons[1].bulletSpeed *= 1.3; }, purchased: false },
+      { name: "Armor Piercing", cost: 900, effect: () => { weapons[1].damage *= 1.4; }, purchased: false },
+      { name: "Extended Magazine", cost: 800, effect: () => { weapons[1].ammo += 20; weapons[1].currentAmmo += 20; }, purchased: false }
+    ],
+    Shotgun: [
+      { name: "More Pellets", cost: 700, effect: () => { weapons[2].pelletCount = (weapons[2].pelletCount || 5) + 3; }, purchased: false },
+      { name: "Faster Reload", cost: 1000, effect: () => { weapons[2].reloadTime *= 0.6; }, purchased: false },
+      { name: "Increased Damage", cost: 1200, effect: () => { weapons[2].damage *= 1.3; }, purchased: false }
+    ],
+    "Rocket Launcher": [
+      { name: "Faster Rockets", cost: 800, effect: () => { weapons[3].bulletSpeed *= 1.2; }, purchased: false },
+      { name: "Bigger Explosion", cost: 1000, effect: () => { weapons[3].damage *= 1.5; }, purchased: false },
+      { name: "Extra Rocket", cost: 600, effect: () => { weapons[3].ammo += 2; weapons[3].currentAmmo += 2; }, purchased: false }
+    ],
+    Flamethrower: [
+      { name: "Longer Range", cost: 500, effect: () => { weapons[4].bulletSpeed *= 1.3; }, purchased: false },
+      { name: "More Damage", cost: 700, effect: () => { weapons[4].damage *= 1.5; }, purchased: false },
+      { name: "More Fuel", cost: 600, effect: () => { weapons[4].ammo += 50; weapons[4].currentAmmo += 50; }, purchased: false }
+    ]
+  };
+
+  // --- MINIMAP SYSTEM ---
+  const minimapCanvas = document.getElementById('minimap');
+  const minimapCtx = minimapCanvas.getContext('2d');
+  minimapCanvas.width = 200;
+  minimapCanvas.height = 200;
+
+  function updateMinimap() {
+    // Clear canvas
+    minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    minimapCtx.fillRect(0, 0, 200, 200);
+    
+    // Draw grid
+    minimapCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    minimapCtx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      minimapCtx.beginPath();
+      minimapCtx.moveTo(i * 20, 0);
+      minimapCtx.lineTo(i * 20, 200);
+      minimapCtx.stroke();
+      
+      minimapCtx.beginPath();
+      minimapCtx.moveTo(0, i * 20);
+      minimapCtx.lineTo(200, i * 20);
+      minimapCtx.stroke();
+    }
+    
+    // Draw player position
+    const playerX = 100 + (camera.position.x / 5);
+    const playerZ = 100 + (camera.position.z / 5);
+    
+    minimapCtx.fillStyle = '#00ff00';
+    minimapCtx.beginPath();
+    minimapCtx.arc(playerX, playerZ, 5, 0, Math.PI * 2);
+    minimapCtx.fill();
+    
+    // Draw player view direction
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    const viewEndX = playerX + direction.x * 15;
+    const viewEndZ = playerZ + direction.z * 15;
+    
+    minimapCtx.strokeStyle = '#00ff00';
+    minimapCtx.lineWidth = 2;
+    minimapCtx.beginPath();
+    minimapCtx.moveTo(playerX, playerZ);
+    minimapCtx.lineTo(viewEndX, viewEndZ);
+    minimapCtx.stroke();
+    
+    // Draw enemy positions
+    for (const enemy of enemies) {
+      const enemyX = 100 + (enemy.position.x / 5);
+      const enemyZ = 100 + (enemy.position.z / 5);
+      
+      minimapCtx.fillStyle = enemy.isDemonKing ? '#ff00ff' : (enemy.isMinion ? '#ff8800' : '#ff0000');
+      minimapCtx.beginPath();
+      if (enemy.isDemonKing) {
+        minimapCtx.arc(enemyX, enemyZ, 8, 0, Math.PI * 2); // Boss is larger
+      } else if (enemy.isMinion) {
+        minimapCtx.arc(enemyX, enemyZ, 3, 0, Math.PI * 2); // Minions are smaller
+      } else {
+        minimapCtx.arc(enemyX, enemyZ, 5, 0, Math.PI * 2);
+      }
+      minimapCtx.fill();
+    }
+    
+    // Draw medikit positions
+    minimapCtx.fillStyle = '#00ffff';
+    for (const medikit of medikits) {
+      const medikitX = 100 + (medikit.position.x / 5);
+      const medikitZ = 100 + (medikit.position.z / 5);
+      
+      minimapCtx.fillRect(medikitX - 3, medikitZ - 3, 6, 6);
+    }
+  }
+
+  // --- VISUAL EFFECTS ---
+  function createExplosion(position, size = 1) {
+    const particleCount = 30 * size;
+    const explosionLight = new THREE.PointLight(0xff4500, 2 * size, 10 * size);
+    explosionLight.position.copy(position);
+    scene.add(explosionLight);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1 * size + Math.random() * 0.3 * size, 8, 8),
+        new THREE.MeshBasicMaterial({ 
+          color: new THREE.Color().setHSL(0.05 + Math.random() * 0.1, 1, 0.5 + Math.random() * 0.5)
+        })
+      );
+      particle.position.copy(position);
+      
+      const velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 1.2 * size,
+        Math.random() * 1.2 * size,
+        (Math.random() - 0.5) * 1.2 * size
+      );
+      
+      particle.velocity = velocity;
+      particle.lifetime = 20 + Math.random() * 20;
+      scene.add(particle);
+      
+      // Update particles
+      const updateParticle = () => {
+        particle.position.add(particle.velocity);
+        particle.velocity.y -= 0.05;
+        particle.lifetime--;
+        particle.material.opacity = particle.lifetime / 40;
+        
+        if (particle.lifetime <= 0) {
+          scene.remove(particle);
+        } else {
+          requestAnimationFrame(updateParticle);
+        }
+      };
+      updateParticle();
+    }
+    
+    // Remove explosion light
+    setTimeout(() => {
+      scene.remove(explosionLight);
+    }, 500);
+  }
+
+  function createHitEffect(position, color = 0xffff00) {
+    const particleCount = 15;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8),
+        new THREE.MeshBasicMaterial({ 
+          color: new THREE.Color(color)
+        })
+      );
+      particle.position.copy(position);
+      
+      const velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.8,
+        Math.random() * 0.8,
+        (Math.random() - 0.5) * 0.8
+      );
+      
+      particle.velocity = velocity;
+      particle.lifetime = 15 + Math.random() * 15;
+      scene.add(particle);
+      
+      // Update particles
+      const updateParticle = () => {
+        particle.position.add(particle.velocity);
+        particle.velocity.y -= 0.02;
+        particle.lifetime--;
+        particle.material.opacity = particle.lifetime / 30;
+        
+        if (particle.lifetime <= 0) {
+          scene.remove(particle);
+        } else {
+          requestAnimationFrame(updateParticle);
+        }
+      };
+      updateParticle();
+    }
+  }
 
   // --- INITIALIZATION ---
   createVillage();
@@ -1786,6 +2297,7 @@ function initGame() {
       enemy.originalPosition = enemy.position.clone();
       scene.add(enemy);
       enemies.push(enemy);
+      waveEnemiesSpawned++;
     }
   }
 
@@ -1839,6 +2351,9 @@ function initGame() {
       
       // Spawn initial minions
       spawnDemonMinion(boss.position);
+      
+      // Show story when boss appears
+      showStoryMessage("The Demon King has arrived! Defend the village at all costs!");
     }
   }
 
@@ -1872,25 +2387,150 @@ function initGame() {
     medikitCounter.textContent = `Medikits: ${playerMedikits}`;
   }
 
-  function showMedikitNotification() {
+  function updateAmmoDisplay() {
+    const weapon = weapons[currentWeaponIndex];
+    if (weapon.ammo === 999) {
+      ammoDisplay.textContent = "Ammo: ∞";
+    } else {
+      ammoDisplay.textContent = `Ammo: ${weapon.currentAmmo}/${weapon.ammo}`;
+    }
+  }
+
+  function showStoryNotification(message) {
     const notification = document.createElement('div');
-    notification.className = 'medikit-notification';
-    notification.textContent = '+1 MEDIKIT';
+    notification.className = 'story-notification';
+    notification.textContent = message;
+    notification.style.position = 'absolute';
+    notification.style.top = '140px';
+    notification.style.left = '50%';
+    notification.style.transform = 'translateX(-50%)';
+    notification.style.color = '#ffaa00';
+    notification.style.fontSize = '18px';
+    notification.style.fontWeight = 'bold';
+    notification.style.textShadow = '2px 2px 0 #000';
+    notification.style.padding = '10px 20px';
+    notification.style.border = '2px solid #ff6b35';
+    notification.style.borderRadius = '10px';
+    notification.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    notification.style.zIndex = '200';
+    notification.style.pointerEvents = 'none';
+    notification.style.textAlign = 'center';
     document.body.appendChild(notification);
     
     setTimeout(() => {
       document.body.removeChild(notification);
-    }, 2000);
+    }, 3000);
   }
 
-  // Spawn initial enemies
-  for (let i = 0; i < 30; i++) { 
-    createEnemy(); 
+  function showStoryMessage(message) {
+    if (storyDisplay.style.display !== 'block') {
+      storyDisplay.textContent = message;
+      storyDisplay.style.display = 'block';
+      
+      setTimeout(() => {
+        storyDisplay.style.display = 'none';
+      }, 3000);
+    }
   }
 
-  // Spawn initial medikits
-  for (let i = 0; i < 15; i++) {
-    spawnMedikit();
+  function showWaveMessage(waveNumber) {
+    waveDisplay.textContent = `WAVE ${waveNumber}`;
+    waveDisplay.style.display = 'block';
+    
+    setTimeout(() => {
+      waveDisplay.style.display = 'none';
+    }, 3000);
+  }
+
+  // --- WAVE SYSTEM ---
+  function startNextWave() {
+    currentWave++;
+    enemiesInWave = 5 + currentWave * 3;
+    waveEnemiesSpawned = 0;
+    waveActive = true;
+    
+    showWaveMessage(currentWave);
+    showStoryNotification(`Wave ${currentWave} incoming! ${enemiesInWave} enemies approaching!`);
+    
+    // Spawn boss every 5 waves
+    if (currentWave % 5 === 0 && !demonKing) {
+      setTimeout(() => {
+        createDemonKing();
+      }, 2000);
+    }
+    
+    // Increase difficulty
+    if (currentWave > 5 && Math.random() < 0.3) {
+      setTimeout(() => {
+        for (let i = 0; i < Math.min(3, Math.floor(currentWave / 5)); i++) {
+          const minion = createDemonMinionModel();
+          minion.position.set(
+            (Math.random() - 0.5) * 100,
+            0.7,
+            (Math.random() - 0.5) * 100
+          );
+          minion.originalPosition = minion.position.clone();
+          scene.add(minion);
+          enemies.push(minion);
+          waveEnemiesSpawned++;
+        }
+      }, 3000);
+    }
+  }
+
+  // --- UPGRADE SHOP ---
+  function openUpgradeShop() {
+    const shop = document.getElementById('upgrade-shop');
+    const upgradeList = document.getElementById('upgrade-list');
+    
+    // Clear previous content
+    upgradeList.innerHTML = '';
+    
+    // Generate upgrade items
+    const currentWeapon = weapons[currentWeaponIndex];
+    const weaponName = currentWeapon.name;
+    const upgrades = weaponUpgrades[weaponName];
+    
+    if (upgrades) {
+      upgrades.forEach((upgrade, index) => {
+        const upgradeItem = document.createElement('div');
+        upgradeItem.className = 'upgrade-item';
+        
+        const upgradeInfo = document.createElement('div');
+        upgradeInfo.innerHTML = `<strong>${upgrade.name}</strong> - Cost: ${upgrade.cost}`;
+        
+        const upgradeButton = document.createElement('button');
+        upgradeButton.className = 'upgrade-button';
+        upgradeButton.textContent = upgrade.purchased ? 'PURCHASED' : 'BUY';
+        upgradeButton.disabled = upgrade.purchased || score < upgrade.cost;
+        
+        if (!upgrade.purchased) {
+          upgradeButton.addEventListener('click', () => {
+            if (score >= upgrade.cost) {
+              score -= upgrade.cost;
+              updateScore(0);
+              upgrade.effect();
+              upgrade.purchased = true;
+              upgradeButton.textContent = 'PURCHASED';
+              upgradeButton.disabled = true;
+              showStoryNotification(`${upgrade.name} purchased!`);
+            }
+          });
+        }
+        
+        upgradeItem.appendChild(upgradeInfo);
+        upgradeItem.appendChild(upgradeButton);
+        upgradeList.appendChild(upgradeItem);
+      });
+    } else {
+      upgradeList.innerHTML = '<p>No upgrades available for this weapon.</p>';
+    }
+    
+    shop.style.display = 'block';
+  }
+
+  function closeUpgradeShop() {
+    document.getElementById('upgrade-shop').style.display = 'none';
   }
 
   // --- GAME FUNCTIONS ---
@@ -1909,13 +2549,29 @@ function initGame() {
       playerHealth = Math.min(playerHealth + healAmount, maxHealth);
       updateHealthUI();
       updateMedikitCounter();
-      showMedikitNotification();
+      showStoryNotification("+50 HEALTH");
+      
+      // Visual effect
+      const healEffect = new THREE.PointLight(0x00ff00, 1, 5);
+      healEffect.position.copy(camera.position);
+      scene.add(healEffect);
+      setTimeout(() => {
+        scene.remove(healEffect);
+      }, 500);
+    } else if (playerMedikits <= 0) {
+      showStoryNotification("No medikits remaining! Find more on the battlefield.");
     }
   }
 
   function takeDamage(amount) { 
     playerHealth -= amount; 
     updateHealthUI(); 
+    
+    // Screen shake effect
+    const shakeAmount = amount / 10;
+    camera.position.x += (Math.random() - 0.5) * shakeAmount;
+    camera.position.y += (Math.random() - 0.5) * shakeAmount;
+    
     if (playerHealth <= 0) { 
       playerHealth = 0; 
       gameOverScreen.style.display = 'block'; 
@@ -1940,6 +2596,9 @@ function initGame() {
         location.reload();
       });
       document.body.appendChild(restartButton);
+      
+      // Show game over story
+      showStoryMessage("The village has fallen to darkness... The Demon King reigns supreme.");
     } 
   }
 
@@ -1970,9 +2629,24 @@ function initGame() {
 
   function shoot() { 
     if (!canShoot) return; 
-    const weapon = weapons[currentWeaponIndex]; 
-    const pelletCount = weapon.name === 'Shotgun' ? 5 : 1; 
+    
+    const weapon = weapons[currentWeaponIndex];
+    
+    // Check ammo
+    if (weapon.ammo !== 999 && weapon.currentAmmo <= 0) {
+      showStoryNotification("Out of ammo! Press R to reload or switch weapons.");
+      return;
+    }
+    
+    // Consume ammo
+    if (weapon.ammo !== 999) {
+      weapon.currentAmmo--;
+      updateAmmoDisplay();
+    }
+    
+    const pelletCount = weapon.name === 'Shotgun' ? (weapon.pelletCount || 5) : 1; 
     const spreadAngle = 0.05; 
+    
     for (let i = 0; i < pelletCount; i++) { 
       const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: weapon.color })); 
       bullet.position.copy(camera.position); 
@@ -1985,64 +2659,41 @@ function initGame() {
       } 
       bullet.velocity = direction.multiplyScalar(weapon.bulletSpeed); 
       bullet.damage = weapon.damage; 
+      bullet.isExplosive = weapon.explosive || false;
       scene.add(bullet); 
       bullets.push(bullet); 
     } 
+    
+    // Visual feedback for shooting
+    firstPersonModel.leftHand.rotation.z = -0.2;
+    firstPersonModel.rightHand.rotation.z = 0.2;
+    
     canShoot = false; 
     setTimeout(() => { 
       canShoot = true; 
     }, weapon.fireRate); 
   }
 
-  function updateWeaponDisplay() { 
-    weaponDisplay.textContent = `Weapon: ${weapons[currentWeaponIndex].name}`; 
+  function reloadWeapon() {
+    const weapon = weapons[currentWeaponIndex];
+    if (weapon.ammo === 999 || weapon.currentAmmo === weapon.ammo || weapon.reloadTime === 0) {
+      return;
+    }
+    
+    canShoot = false;
+    showStoryNotification("Reloading...");
+    
+    setTimeout(() => {
+      weapon.currentAmmo = weapon.ammo;
+      updateAmmoDisplay();
+      canShoot = true;
+      showStoryNotification("Reloaded!");
+    }, weapon.reloadTime);
   }
 
-  function createHitEffect(position) {
-    const particleCount = 20;
-    const particles = [];
-    
-    for (let i = 0; i < particleCount; i++) {
-      const particle = new THREE.Mesh(
-        new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8),
-        new THREE.MeshBasicMaterial({ 
-          color: new THREE.Color().setHSL(0.05 + Math.random() * 0.05, 1, 0.5 + Math.random() * 0.5)
-        })
-      );
-      particle.position.copy(position);
-      
-      const velocity = new THREE.Vector3(
-        (Math.random() - 0.5) * 0.8,
-        Math.random() * 0.8,
-        (Math.random() - 0.5) * 0.8
-      );
-      
-      particle.velocity = velocity;
-      particle.lifetime = 30 + Math.random() * 20;
-      
-      scene.add(particle);
-      particles.push(particle);
-    }
-    
-    function updateParticles() {
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const particle = particles[i];
-        particle.position.add(particle.velocity);
-        particle.velocity.y -= 0.02;
-        particle.lifetime--;
-        
-        if (particle.lifetime <= 0) {
-          scene.remove(particle);
-          particles.splice(i, 1);
-        }
-      }
-      
-      if (particles.length > 0) {
-        requestAnimationFrame(updateParticles);
-      }
-    }
-    
-    updateParticles();
+  function updateWeaponDisplay() { 
+    weaponDisplay.textContent = `Weapon: ${weapons[currentWeaponIndex].name}`; 
+    updateAmmoDisplay();
   }
 
   // --- EVENT LISTENERS ---
@@ -2050,27 +2701,76 @@ function initGame() {
     playerHealth = maxHealth; 
     score = 0;
     combo = 1;
-    playerMedikits = 3; // Start with 3 medikits
+    playerMedikits = 3;
+    currentWave = 1;
+    enemiesInWave = 5;
+    waveEnemiesSpawned = 0;
+    waveActive = true;
     updateHealthUI(); 
     updateScore(0);
     updateMedikitCounter();
+    updateWeaponDisplay();
     gameOverScreen.style.display = 'none';
     finalScoreDisplay.style.display = 'none';
     controls.lock(); 
-  });
+    showStoryMessage("The village needs your help! Defend it from the demonic invasion!");
+    showWaveMessage(currentWave);
+  }); 
   
-  document.addEventListener('mousedown', (event) => { if (event.button === 0 && controls.isLocked) { shoot(); } });
+  document.addEventListener('mousedown', (event) => { 
+    if (event.button === 0 && controls.isLocked) { 
+      shoot(); 
+    } 
+  });
   
   document.addEventListener('keydown', (e) => { 
     if (e.code === 'Digit1') { currentWeaponIndex = 0; updateWeaponDisplay(); } 
     if (e.code === 'Digit2') { currentWeaponIndex = 1; updateWeaponDisplay(); } 
     if (e.code === 'Digit3') { currentWeaponIndex = 2; updateWeaponDisplay(); } 
+    if (e.code === 'Digit4') { currentWeaponIndex = 3; updateWeaponDisplay(); } 
+    if (e.code === 'Digit5') { currentWeaponIndex = 4; updateWeaponDisplay(); } 
     if (e.code === 'KeyE') { useMedikit(); } 
+    if (e.code === 'KeyR') { reloadWeapon(); }
+    if (e.code === 'KeyB') { openUpgradeShop(); }
   });
+  
+  // Shop close button
+  document.getElementById('close-shop').addEventListener('click', closeUpgradeShop);
   
   const keys = {}; 
   document.addEventListener("keydown", e => keys[e.code] = true); 
   document.addEventListener("keyup", e => keys[e.code] = false);
+
+  // --- STORY PROGRESSION ---
+  let currentChapter = 1;
+  let demonKingFirstAppearance = false;
+  let bossDefeated = false;
+
+  function checkStoryProgression() {
+    // Chapter 1: Beginning (0-200 score)
+    if (score >= 200 && currentChapter === 1) {
+      currentChapter = 2;
+      showStoryMessage("Chapter 2: The Invasion Begins - More enemies are arriving!");
+    }
+    
+    // Chapter 2: Mid game (500-1000 score)
+    if (score >= 500 && currentChapter === 2) {
+      currentChapter = 3;
+      showStoryMessage("Chapter 3: The Demon King Approaches - The ultimate evil draws near!");
+    }
+    
+    // Chapter 3: Boss fight (1500+ score)
+    if (score >= 1500 && currentChapter === 3) {
+      currentChapter = 4;
+      showStoryMessage("Chapter 4: Final Battle - Destroy the Demon King and save Oakhaven!");
+    }
+    
+    // Victory
+    if (bossDefeated) {
+      currentChapter = 5;
+      showStoryMessage("VICTORY! Oakhaven is saved! The darkness has been driven back to the underworld!");
+    }
+  }
 
   // --- ANIMATION LOOP ---
   const moveSpeed = 0.3; 
@@ -2078,6 +2778,8 @@ function initGame() {
   let bossSpawnTimer = 0;
   let enemySpawnTimer = 0;
   let medikitSpawnTimer = 0;
+  let waveSpawnTimer = 0;
+  
   function animate() {
     requestAnimationFrame(animate);
     if (controls.isLocked) {
@@ -2108,9 +2810,10 @@ function initGame() {
       handsAndGun.translateX(-0.2);
       handsAndGun.translateY(-0.3);
       
+      // Animate hands
       if (!canShoot) {
-        firstPersonModel.leftHand.rotation.z = -0.1;
-        firstPersonModel.rightHand.rotation.z = 0.1;
+        firstPersonModel.leftHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.leftHand.rotation.z, -0.1, 0.3);
+        firstPersonModel.rightHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.rightHand.rotation.z, 0.1, 0.3);
       } else {
         firstPersonModel.leftHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.leftHand.rotation.z, 0, 0.1);
         firstPersonModel.rightHand.rotation.z = THREE.MathUtils.lerp(firstPersonModel.rightHand.rotation.z, 0, 0.1);
@@ -2122,17 +2825,34 @@ function initGame() {
         updateEnemyAI(enemy, currentTime);
       }
       
-      // Spawn more regular enemies
-      enemySpawnTimer += 16;
-      const regularEnemies = enemies.filter(e => !e.isBoss && !e.isMinion).length;
-      if (regularEnemies < 40 && enemySpawnTimer > 500) {
-        createEnemy();
-        enemySpawnTimer = 0;
+      // Wave system
+      if (waveActive && waveEnemiesSpawned < enemiesInWave) {
+        waveSpawnTimer += 16;
+        if (waveSpawnTimer > 2000) { // Spawn enemy every 2 seconds
+          createEnemy();
+          waveSpawnTimer = 0;
+        }
+      }
+      
+      // Check for wave completion
+      if (waveActive && waveEnemiesSpawned >= enemiesInWave) {
+        const remainingEnemies = enemies.filter(e => !e.isBoss && !e.isMinion).length;
+        if (remainingEnemies === 0) {
+          waveActive = false;
+          showStoryNotification(`Wave ${currentWave} complete! Prepare for the next wave...`);
+          setTimeout(() => {
+            startNextWave();
+          }, 5000);
+        }
       }
       
       // Spawn demon king periodically
       bossSpawnTimer += 16;
       if (!demonKing && bossSpawnTimer > 25000) {
+        if (!demonKingFirstAppearance) {
+          demonKingFirstAppearance = true;
+          showStoryMessage("The Demon King Malphas has arrived! The ultimate evil threatens Oakhaven!");
+        }
         createDemonKing();
         bossSpawnTimer = 0;
       }
@@ -2147,7 +2867,13 @@ function initGame() {
       // Update counters
       updateEnemyCounter();
       updateMedikitCounter();
+      
+      // Check story progression
+      checkStoryProgression();
     }
+    
+    // Update minimap
+    updateMinimap();
     
     // Update medikits
     for (let i = medikits.length - 1; i >= 0; i--) {
@@ -2163,7 +2889,7 @@ function initGame() {
         playerMedikits++;
         scene.remove(medikit);
         medikits.splice(i, 1);
-        showMedikitNotification();
+        showStoryNotification("+1 MEDIKIT");
         updateMedikitCounter();
       }
     }
@@ -2186,13 +2912,27 @@ function initGame() {
         }
         
         if (bullet.position.distanceTo(enemy.position) < hitRadius) {
-          createHitEffect(enemy.position);
+          createHitEffect(enemy.position, bullet.material.color.getHex());
+          
+          // Explosive damage
+          if (bullet.isExplosive) {
+            createExplosion(bullet.position, 1.5);
+            
+            // Area damage
+            for (const otherEnemy of enemies) {
+              if (otherEnemy !== enemy && bullet.position.distanceTo(otherEnemy.position) < 5) {
+                otherEnemy.health -= bullet.damage * 0.5;
+                createHitEffect(otherEnemy.position, 0xff8800);
+              }
+            }
+          }
           
           if (enemy.isDemonKing) {
             enemy.health -= bullet.damage;
             updateBossHealthUI();
             
             if (enemy.health <= 0) {
+              createExplosion(enemy.position, 2);
               scene.remove(enemy);
               enemies.splice(j, 1);
               updateScore(1000); // Demon king gives more points
@@ -2200,11 +2940,14 @@ function initGame() {
               currentBoss = null;
               bossName.style.display = 'none';
               bossHealthContainer.style.display = 'none';
+              bossDefeated = true;
+              showStoryMessage("The Demon King has been defeated! But his evil influence may return...");
             }
           } else if (enemy.isMinion) {
             enemy.health -= bullet.damage;
             
             if (enemy.health <= 0) {
+              createExplosion(enemy.position, 0.5);
               scene.remove(enemy);
               enemies.splice(j, 1);
               updateScore(50); // Minions give fewer points
@@ -2213,6 +2956,7 @@ function initGame() {
             enemy.health -= bullet.damage;
             
             if (enemy.health <= 0) {
+              createExplosion(enemy.position, 1);
               scene.remove(enemy);
               enemies.splice(j, 1);
               updateScore(500);
@@ -2221,6 +2965,7 @@ function initGame() {
               bossHealthContainer.style.display = 'none';
             }
           } else {
+            createExplosion(enemy.position, 0.5);
             scene.remove(enemy);
             enemies.splice(j, 1);
             updateScore(100);
@@ -2248,6 +2993,7 @@ function initGame() {
         
         if (bullet.isDemonKingProjectile) {
           damage = 30; // Demon king projectiles do more damage
+          createExplosion(bullet.position, 0.5);
         } else if (bullet.isMinionProjectile) {
           damage = 10; // Minion projectiles do less damage
         }
