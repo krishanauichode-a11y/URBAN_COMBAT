@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Urban Combat TPS - Village Battle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     body { 
       margin: 0; 
@@ -9,6 +10,67 @@
       background: black; 
       font-family: 'Arial', sans-serif; 
       cursor: crosshair;
+      touch-action: none; /* Prevent default touch actions */
+    }
+    
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
+      #instructions { 
+        font-size: 12px; 
+        padding: 3px;
+      }
+      
+      #hud { 
+        bottom: 10px; 
+        left: 10px; 
+        padding: 5px;
+        font-size: 12px;
+      }
+      
+      #health-bar-container { 
+        width: 100px; 
+        height: 15px; 
+      }
+      
+      #weapon-display { 
+        font-size: 14px; 
+      }
+      
+      #ammo-display { 
+        font-size: 12px; 
+      }
+      
+      #score-display { 
+        font-size: 14px; 
+      }
+      
+      #combo-display { 
+        font-size: 12px; 
+      }
+      
+      #enemy-counter {
+        font-size: 14px;
+        right: 10px;
+        top: 5px;
+      }
+      
+      #medikit-counter {
+        font-size: 14px;
+        right: 10px;
+        top: 30px;
+      }
+      
+      #minimap-container {
+        width: 100px;
+        height: 100px;
+        bottom: 10px;
+        right: 10px;
+      }
+      
+      #upgrade-shop {
+        width: 90%;
+        max-height: 70%;
+      }
     }
     
     /* Menu Screen Styles */
@@ -38,6 +100,12 @@
       animation: pulse 2s infinite;
     }
     
+    @media (max-width: 768px) {
+      #menu-title {
+        font-size: 32px;
+      }
+    }
+    
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.05); }
@@ -57,6 +125,14 @@
       box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
     }
     
+    @media (max-width: 768px) {
+      #story-text {
+        max-width: 90%;
+        padding: 15px;
+        font-size: 14px;
+      }
+    }
+    
     #start-button {
       padding: 15px 40px;
       font-size: 24px;
@@ -68,6 +144,13 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       color: white;
       font-weight: bold;
+    }
+    
+    @media (max-width: 768px) {
+      #start-button {
+        padding: 12px 30px;
+        font-size: 20px;
+      }
     }
     
     #start-button:hover {
@@ -138,6 +221,12 @@
       font-size: 20px; 
     }
     
+    #ammo-display { 
+      margin-top: 5px; 
+      font-size: 16px; 
+      color: #cccccc;
+    }
+    
     #score-display { 
       margin-top: 10px; 
       font-size: 20px; 
@@ -163,6 +252,12 @@
       text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
     }
     
+    @media (max-width: 768px) {
+      #game-over {
+        font-size: 36px;
+      }
+    }
+    
     #final-score { 
       position: absolute; 
       top: 60%; 
@@ -172,6 +267,12 @@
       transform: translate(-50%, -50%); 
       display: none; 
       z-index: 200; 
+    }
+    
+    @media (max-width: 768px) {
+      #final-score {
+        font-size: 24px;
+      }
     }
     
     .hit-popup { 
@@ -210,6 +311,14 @@
       box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
     }
     
+    @media (max-width: 768px) {
+      #story-display {
+        top: 80px;
+        max-width: 90%;
+        font-size: 12px;
+      }
+    }
+    
     /* Boss Health Bar */
     #boss-health-container {
       position: absolute;
@@ -223,6 +332,14 @@
       display: none;
       z-index: 100;
       border-radius: 5px;
+    }
+    
+    @media (max-width: 768px) {
+      #boss-health-container {
+        width: 80%;
+        height: 25px;
+        top: 60px;
+      }
     }
     
     #boss-health {
@@ -243,6 +360,13 @@
       text-shadow: 2px 2px 0 #000;
       display: none;
       z-index: 100;
+    }
+    
+    @media (max-width: 768px) {
+      #boss-name {
+        font-size: 20px;
+        top: 35px;
+      }
     }
     
     /* Enemy Counter */
@@ -375,13 +499,6 @@
       cursor: pointer;
     }
     
-    /* Ammo Display */
-    #ammo-display {
-      margin-top: 5px;
-      font-size: 16px;
-      color: #cccccc;
-    }
-    
     /* Wave Display */
     #wave-display {
       position: absolute;
@@ -394,6 +511,13 @@
       text-shadow: 2px 2px 0 #000;
       display: none;
       z-index: 100;
+    }
+    
+    @media (max-width: 768px) {
+      #wave-display {
+        font-size: 20px;
+        top: 50px;
+      }
     }
 
     /* --- PAUSE MENU --- */
@@ -419,6 +543,12 @@
       text-shadow: 2px 2px 0 #000;
     }
     
+    @media (max-width: 768px) {
+      #pause-menu h2 {
+        font-size: 36px;
+      }
+    }
+    
     .pause-menu-button {
       padding: 15px 30px;
       margin: 10px;
@@ -432,6 +562,14 @@
       color: white;
       font-weight: bold;
       min-width: 200px;
+    }
+    
+    @media (max-width: 768px) {
+      .pause-menu-button {
+        padding: 12px 25px;
+        font-size: 18px;
+        min-width: 180px;
+      }
     }
     
     .pause-menu-button:hover {
@@ -451,8 +589,8 @@
       border-radius: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 11; /* Above crosshair */
-      display: none; /* Hidden by default */
+      z-index: 11; 
+      display: none; 
       box-shadow: 0 0 5px 1px rgba(255, 0, 0, 0.7);
     }
 
@@ -478,41 +616,241 @@
     }
 
     #pistol-img {
-        width: 350px;
+        width: 400px;
         bottom: -10px;
+    }
+    
+    @media (max-width: 768px) {
+      #pistol-img {
+        width: 250px;
+      }
     }
 
     #shotgun-img {
-        width: 450px;
+        width: 500px;
         bottom: -5px;
+    }
+    
+    @media (max-width: 768px) {
+      #shotgun-img {
+        width: 320px;
+      }
     }
 
     #rifle-img {
-        width: 400px;
+        width: 500px;
         bottom: -5px;
+    }
+    
+    @media (max-width: 768px) {
+      #rifle-img {
+        width: 280px;
+      }
     }
 
     #rocket-launcher-img {
         width: 500px;
-        bottom: 140px;
+        bottom: -5px;
+    }
+    
+    @media (max-width: 768px) {
+      #rocket-launcher-img {
+        width: 350px;
+      }
     }
     
     #flamethrower-img {
-        width: 420px;
-        bottom: 165px;
+        width: 500px;
+        bottom: -5px;
+    }
+    
+    @media (max-width: 768px) {
+      #flamethrower-img {
+        width: 300px;
+      }
     }
 
     /* --- 2D MUZZLE FLASH --- */
     #muzzle-flash {
       position: absolute;
-      bottom: -100px; /* Default position, will be updated by JS */
+      bottom: 0;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       width: 120px;
       height: 120px;
       display: none; /* Hidden by default */
       pointer-events: none; /* Ensures it doesn't block clicks */
       z-index: 20; /* Appear on top of the gun */
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      filter: brightness(1.8) contrast(1.5) saturate(1.5);
+      mix-blend-mode: screen;
+    }
+    
+    /* --- MUZZLE FLASH PULSE EFFECT --- */
+    @keyframes muzzlePulse {
+      0% { 
+        transform: translate(-50%, -50%) scale(0.8); 
+        opacity: 0.9;
+      }
+      50% { 
+        transform: translate(-50%, -50%) scale(1.2); 
+        opacity: 1;
+      }
+      100% { 
+        transform: translate(-50%, -50%) scale(0.9); 
+        opacity: 0.8;
+      }
+    }
+    
+    .muzzle-active {
+      animation: muzzlePulse 0.1s ease-out;
+    }
+    
+    /* --- MOBILE CONTROLS --- */
+    #mobile-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 90;
+      display: none; /* Hidden by default, shown on mobile */
+    }
+    
+    @media (max-width: 768px) {
+      #mobile-controls {
+        display: block;
+      }
+    }
+    
+    #joystick-container {
+      position: absolute;
+      bottom: 80px;
+      left: 80px;
+      width: 120px;
+      height: 120px;
+      pointer-events: auto;
+    }
+    
+    #joystick-base {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    #joystick-stick {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 107, 53, 0.7);
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      top: 35px;
+      left: 35px;
+    }
+    
+    #fire-button {
+      position: absolute;
+      bottom: 100px;
+      right: 50px;
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      pointer-events: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    #action-buttons {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    
+    .action-button {
+      width: 60px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 5px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #weapon-selector {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      pointer-events: auto;
+    }
+    
+    .weapon-button {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 5px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .weapon-button.active {
+      background: rgba(255, 107, 53, 0.7);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    #pause-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 5px;
+      color: white;
+      font-size: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: auto;
+    }
+    
+    /* Touch area for looking around */
+    #touch-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
     }
   </style>
 </head>
@@ -582,8 +920,8 @@
   <img id="pistol-img" class="weapon-img" src="image/41061a1c435b0001aaae0378bdeb0608.png" alt="Pistol">
   <img id="shotgun-img" class="weapon-img" src="image/67c34fa8113026cc50555bfee180eb88.png" alt="Shotgun">
   <img id="rifle-img" class="weapon-img" src="image/f9c81650038c6074e1b445d40e985fe4.png" alt="Rifle">
-  <img id="rocket-launcher-img" class="weapon-img" src="https://i.imgur.com/8lG7CgS.png" alt="Rocket Launcher">
-  <img id="flamethrower-img" class="weapon-img" src="https://i.imgur.com/5qF5EzB.png" alt="Flamethrower">
+  <img id="rocket-launcher-img" class="weapon-img" src="image/a813ce1a889ad048151524823123242f.png" alt="M4">
+  <img id="flamethrower-img" class="weapon-img" src="image/78675f1ee449be75704076baaf3c20d1.png" alt="scelar">
 
   <!-- MUZZLE FLASH IMAGE -->
   <img id="muzzle-flash" src="image/5888c6febc2fc2ef3a1860d5.png">
@@ -597,6 +935,33 @@
   <button id="quit-button" class="pause-menu-button">QUIT</button>
 </div>
 
+<!-- Mobile Controls -->
+<div id="mobile-controls">
+  <div id="touch-area"></div>
+  
+  <div id="joystick-container">
+    <div id="joystick-base"></div>
+    <div id="joystick-stick"></div>
+  </div>
+  
+  <div id="fire-button">FIRE</div>
+  
+  <div id="action-buttons">
+    <div id="medikit-button" class="action-button">MED</div>
+    <div id="reload-button" class="action-button">REL</div>
+    <div id="shop-button" class="action-button">SHOP</div>
+  </div>
+  
+  <div id="weapon-selector">
+    <div class="weapon-button active" data-weapon="0">1</div>
+    <div class="weapon-button" data-weapon="1">2</div>
+    <div class="weapon-button" data-weapon="2">3</div>
+    <div class="weapon-button" data-weapon="3">4</div>
+    <div class="weapon-button" data-weapon="4">5</div>
+  </div>
+  
+  <div id="pause-button">⏸</div>
+</div>
 
 <script type="importmap">{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }</script>
 
@@ -622,6 +987,28 @@ const resumeButton = document.getElementById('resume-button');
 const newGameButton = document.getElementById('new-game-button');
 const quitButton = document.getElementById('quit-button');
 
+// --- MOBILE CONTROLS ---
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const mobileControls = document.getElementById('mobile-controls');
+const joystickContainer = document.getElementById('joystick-container');
+const joystickBase = document.getElementById('joystick-base');
+const joystickStick = document.getElementById('joystick-stick');
+const fireButton = document.getElementById('fire-button');
+const medikitButton = document.getElementById('medikit-button');
+const reloadButton = document.getElementById('reload-button');
+const shopButton = document.getElementById('shop-button');
+const weaponButtons = document.querySelectorAll('.weapon-button');
+const pauseButton = document.getElementById('pause-button');
+const touchArea = document.getElementById('touch-area');
+
+// Mobile control variables
+let joystickActive = false;
+let joystickPosition = { x: 0, y: 0 };
+let touchStartX = 0;
+let touchStartY = 0;
+let touchDeltaX = 0;
+let touchDeltaY = 0;
+let fireButtonPressed = false;
 
 // Get all weapon image elements
 const pistolImg = document.getElementById('pistol-img');
@@ -632,6 +1019,182 @@ const flamethrowerImg = document.getElementById('flamethrower-img');
 
 const weaponImages = [pistolImg, shotgunImg, rifleImg, rocketLauncherImg, flamethrowerImg];
 
+// Weapon-specific muzzle flash positions (precise barrel end positions)
+const muzzleFlashPositions = {
+  pistol: { 
+    xPercent: 92, 
+    yPercent: 48, 
+    scale: 0.6,
+    offsetX: 0,
+    offsetY: 0
+  },
+  shotgun: { 
+    xPercent: 94, 
+    yPercent: 52, 
+    scale: 1.0,
+    offsetX: 0,
+    offsetY: 5
+  },
+  rifle: { 
+    xPercent: 96, 
+    yPercent: 49, 
+    scale: 0.8,
+    offsetX: 0,
+    offsetY: 0
+  },
+  rocketLauncher: { 
+    xPercent: 97, 
+    yPercent: 50, 
+    scale: 1.3,
+    offsetX: 0,
+    offsetY: 0
+  },
+  flamethrower: { 
+    xPercent: 95, 
+    yPercent: 45, 
+    scale: 0.9,
+    offsetX: 0,
+    offsetY: -5
+  }
+};
+
+// --- MOBILE CONTROLS SETUP ---
+if (isMobile) {
+  // Update instructions for mobile
+  document.getElementById('instructions').textContent = 'Use joystick to move, drag screen to look, tap FIRE to shoot, tap buttons for actions';
+  
+  // Set up joystick controls
+  joystickContainer.addEventListener('touchstart', handleJoystickStart, { passive: false });
+  joystickContainer.addEventListener('touchmove', handleJoystickMove, { passive: false });
+  joystickContainer.addEventListener('touchend', handleJoystickEnd, { passive: false });
+  
+  // Set up fire button
+  fireButton.addEventListener('touchstart', handleFireStart, { passive: false });
+  fireButton.addEventListener('touchend', handleFireEnd, { passive: false });
+  
+  // Set up action buttons
+  medikitButton.addEventListener('touchstart', () => { useMedikit(); }, { passive: false });
+  reloadButton.addEventListener('touchstart', () => { reloadWeapon(); }, { passive: false });
+  shopButton.addEventListener('touchstart', () => { if (!isPaused) openUpgradeShop(); }, { passive: false });
+  pauseButton.addEventListener('touchstart', togglePauseMenu, { passive: false });
+  
+  // Set up weapon selector
+  weaponButtons.forEach(button => {
+    button.addEventListener('touchstart', () => {
+      const weaponIndex = parseInt(button.getAttribute('data-weapon'));
+      switchWeapon(weaponIndex);
+    }, { passive: false });
+  });
+  
+  // Set up touch area for looking around
+  touchArea.addEventListener('touchstart', handleTouchStart, { passive: false });
+  touchArea.addEventListener('touchmove', handleTouchMove, { passive: false });
+  touchArea.addEventListener('touchend', handleTouchEnd, { passive: false });
+}
+
+function handleJoystickStart(event) {
+  event.preventDefault();
+  joystickActive = true;
+  const touch = event.touches[0];
+  const rect = joystickContainer.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  joystickPosition.x = touch.clientX - centerX;
+  joystickPosition.y = touch.clientY - centerY;
+  
+  // Limit joystick position to the base
+  const distance = Math.sqrt(joystickPosition.x ** 2 + joystickPosition.y ** 2);
+  const maxDistance = rect.width / 2 - 25; // 25 is half the stick width
+  
+  if (distance > maxDistance) {
+    joystickPosition.x = (joystickPosition.x / distance) * maxDistance;
+    joystickPosition.y = (joystickPosition.y / distance) * maxDistance;
+  }
+  
+  // Update stick position
+  joystickStick.style.transform = `translate(${joystickPosition.x}px, ${joystickPosition.y}px)`;
+}
+
+function handleJoystickMove(event) {
+  event.preventDefault();
+  if (!joystickActive) return;
+  
+  const touch = event.touches[0];
+  const rect = joystickContainer.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  joystickPosition.x = touch.clientX - centerX;
+  joystickPosition.y = touch.clientY - centerY;
+  
+  // Limit joystick position to the base
+  const distance = Math.sqrt(joystickPosition.x ** 2 + joystickPosition.y ** 2);
+  const maxDistance = rect.width / 2 - 25; // 25 is half the stick width
+  
+  if (distance > maxDistance) {
+    joystickPosition.x = (joystickPosition.x / distance) * maxDistance;
+    joystickPosition.y = (joystickPosition.y / distance) * maxDistance;
+  }
+  
+  // Update stick position
+  joystickStick.style.transform = `translate(${joystickPosition.x}px, ${joystickPosition.y}px)`;
+}
+
+function handleJoystickEnd(event) {
+  event.preventDefault();
+  joystickActive = false;
+  joystickPosition = { x: 0, y: 0 };
+  joystickStick.style.transform = 'translate(0, 0)';
+}
+
+function handleFireStart(event) {
+  event.preventDefault();
+  fireButtonPressed = true;
+  fireButton.style.background = 'rgba(255, 0, 0, 0.8)';
+}
+
+function handleFireEnd(event) {
+  event.preventDefault();
+  fireButtonPressed = false;
+  fireButton.style.background = 'rgba(255, 0, 0, 0.5)';
+}
+
+function handleTouchStart(event) {
+  event.preventDefault();
+  const touch = event.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  touchDeltaX = 0;
+  touchDeltaY = 0;
+}
+
+function handleTouchMove(event) {
+  event.preventDefault();
+  const touch = event.touches[0];
+  touchDeltaX = touch.clientX - touchStartX;
+  touchDeltaY = touch.clientY - touchStartY;
+}
+
+function handleTouchEnd(event) {
+  event.preventDefault();
+  touchDeltaX = 0;
+  touchDeltaY = 0;
+}
+
+function switchWeapon(index) {
+  currentWeaponIndex = index;
+  updateWeaponDisplay();
+  switchWeaponUI(currentWeaponIndex);
+  
+  // Update active button
+  weaponButtons.forEach(button => {
+    button.classList.remove('active');
+    if (parseInt(button.getAttribute('data-weapon')) === index) {
+      button.classList.add('active');
+    }
+  });
+}
 
 startButton.addEventListener('click', () => {
   menuScreen.style.opacity = '0';
@@ -2088,7 +2651,12 @@ function initGame() {
   // --- GAME VARIABLES ---
   const playerModel = createRetroStylePlayerModel();
   scene.add(playerModel);
-  const controls = new PointerLockControls(camera, document.body);
+  
+  // Only use PointerLockControls on desktop
+  let controls;
+  if (!isMobile) {
+    controls = new PointerLockControls(camera, document.body);
+  }
   
   let playerHealth = 100;
   const maxHealth = 100;
@@ -2114,7 +2682,7 @@ function initGame() {
       name: 'Pistol', 
       fireRate: 300, 
       bulletSpeed: 2, 
-      damage: 25, 
+      damage: 50, 
       color: 0xffff00,
       ammo: 999,
       reloadTime: 0,
@@ -2125,7 +2693,7 @@ function initGame() {
       name: 'Rifle', 
       fireRate: 100, 
       bulletSpeed: 4, 
-      damage: 15, 
+      damage: 25, 
       color: 0xff0000,
       ammo: 30,
       reloadTime: 2000,
@@ -2137,7 +2705,7 @@ function initGame() {
       name: 'Shotgun', 
       fireRate: 800, 
       bulletSpeed: 3, 
-      damage: 50, 
+      damage: 100, 
       color: 0x00ff00,
       ammo: 8,
       reloadTime: 3000,
@@ -2148,23 +2716,23 @@ function initGame() {
       name: 'Rocket Launcher', 
       fireRate: 1500, 
       bulletSpeed: 1.5, 
-      damage: 100, 
+      damage: 150, 
       color: 0xff00ff,
-      ammo: 5,
+      ammo: 30,
       reloadTime: 4000,
-      currentAmmo: 5,
-      explosive: true,
+      currentAmmo: 30,
+      continuous: true,
       recoil: 15
     },
     { 
       name: 'Flamethrower', 
       fireRate: 50, 
       bulletSpeed: 0.8, 
-      damage: 5, 
+      damage: 30, 
       color: 0xff8800,
       ammo: 100,
       reloadTime: 0,
-      currentAmmo: 100,
+      currentAmmo: 30,
       continuous: true,
       recoil: 2
     }
@@ -2701,7 +3269,10 @@ function initGame() {
       gameOverScreen.style.display = 'block'; 
       finalScoreDisplay.textContent = `Final Score: ${score}`; 
       finalScoreDisplay.style.display = 'block'; 
-      controls.unlock(); 
+      
+      if (controls) {
+        controls.unlock(); 
+      }
       isPaused = true; // Pause the game on game over
       
       const restartButton = document.createElement('button');
@@ -2764,12 +3335,6 @@ function initGame() {
     // Show the new weapon image
     if (weaponImages[newIndex]) {
       weaponImages[newIndex].style.display = 'block';
-      
-      // Update muzzle flash position based on the new weapon's barrel
-      const currentWeaponImg = weaponImages[newIndex];
-      const imgRect = currentWeaponImg.getBoundingClientRect();
-      const barrelOffset = imgRect.height * 0.8; // Estimate barrel position
-      muzzleFlashElement.style.bottom = `${window.innerHeight - imgRect.top + barrelOffset}px`;
     }
 
     // --- SCOPE LOGIC ---
@@ -2777,6 +3342,42 @@ function initGame() {
     if (!weapons[newIndex].hasScope && isScopedIn) {
         isScopedIn = false;
         updateScopeState();
+    }
+    
+    // Update muzzle flash position for the new weapon
+    updateMuzzleFlashPosition(newIndex);
+  }
+  
+  // Function to update muzzle flash position with precise barrel positioning
+  function updateMuzzleFlashPosition(weaponIndex) {
+    const weaponNames = ['pistol', 'shotgun', 'rifle', 'rocketLauncher', 'flamethrower'];
+    const currentWeaponName = weaponNames[weaponIndex];
+    const position = muzzleFlashPositions[currentWeaponName];
+    
+    if (position) {
+      // Set the position relative to the current weapon's barrel
+      const weaponImg = weaponImages[weaponIndex];
+      if (weaponImg) {
+        const imgRect = weaponImg.getBoundingClientRect();
+        
+        // Calculate the precise muzzle position based on percentage
+        const muzzleX = imgRect.left + (imgRect.width * position.xPercent / 100);
+        const muzzleY = imgRect.top + (imgRect.height * position.yPercent / 100);
+        
+        // Apply any additional offsets for fine-tuning
+        const finalX = muzzleX + position.offsetX;
+        const finalY = muzzleY + position.offsetY;
+        
+        // Position the muzzle flash at the calculated location
+        muzzleFlashElement.style.left = `${finalX}px`;
+        muzzleFlashElement.style.top = `${finalY}px`;
+        
+        // Scale the muzzle flash based on weapon type
+        muzzleFlashElement.style.transform = `translate(-50%, -50%) scale(${position.scale})`;
+        
+        // Add pulsing animation class for realistic effect
+        muzzleFlashElement.classList.add('muzzle-active');
+      }
     }
   }
 
@@ -2800,11 +3401,15 @@ function initGame() {
     if (isPaused) {
       // Pausing
       pauseMenu.style.display = 'flex';
-      controls.unlock(); // Unlock mouse to interact with menu
+      if (controls) {
+        controls.unlock(); // Unlock mouse to interact with menu
+      }
     } else {
       // Resuming
       pauseMenu.style.display = 'none';
-      controls.lock(); // Re-lock mouse for gameplay
+      if (controls) {
+        controls.lock(); // Re-lock mouse for gameplay
+      }
     }
   }
 
@@ -2828,10 +3433,39 @@ function initGame() {
     // --- 2D GUN RECOIL ---
     gunRecoil = weapon.recoil; // Use recoil from weapon object
 
-    // --- 2D MUZZLE FLASH ---
+    // --- 2D MUZZLE FLASH AT PRECISE BARREL POSITION ---
+    // Update muzzle flash position before showing it
+    updateMuzzleFlashPosition(currentWeaponIndex);
     muzzleFlashElement.style.display = 'block';
+    
+    // Create a brief light effect at the muzzle position
+    const muzzleLight = new THREE.PointLight(0xffffff, 1.5, 8);
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    muzzleLight.position.copy(camera.position);
+    muzzleLight.position.add(direction.multiplyScalar(2));
+    scene.add(muzzleLight);
+    
+    // Add screen flash effect for more realism
+    const screenFlash = document.createElement('div');
+    screenFlash.style.position = 'fixed';
+    screenFlash.style.top = '0';
+    screenFlash.style.left = '0';
+    screenFlash.style.width = '100%';
+    screenFlash.style.height = '100%';
+    screenFlash.style.backgroundColor = 'rgba(255, 255, 200, 0.1)';
+    screenFlash.style.pointerEvents = 'none';
+    screenFlash.style.zIndex = '15';
+    document.body.appendChild(screenFlash);
+    
+    // Hide muzzle flash, remove light and screen flash after a short duration
     setTimeout(() => {
         muzzleFlashElement.style.display = 'none';
+        muzzleFlashElement.classList.remove('muzzle-active');
+        scene.remove(muzzleLight);
+        if (document.body.contains(screenFlash)) {
+          document.body.removeChild(screenFlash);
+        }
     }, 50); 
     
     const pelletCount = weapon.name === 'Shotgun' ? (weapon.pelletCount || 5) : 1; 
@@ -2898,7 +3532,10 @@ function initGame() {
     updateWeaponDisplay();
     gameOverScreen.style.display = 'none';
     finalScoreDisplay.style.display = 'none';
-    controls.lock(); 
+    
+    if (controls) {
+      controls.lock(); 
+    }
     showStoryMessage("The village needs your help! Defend it from the demonic invasion!");
     showWaveMessage(currentWave);
     
@@ -2907,18 +3544,59 @@ function initGame() {
     switchWeaponUI(currentWeaponIndex); // Show the initial weapon
   }); 
   
-  document.addEventListener('mousedown', (event) => { 
-    if (event.button === 0 && controls.isLocked) { 
-      shoot(); 
-    } 
-  });
-
-  // --- PAUSE TOGGLE LISTENER ---
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'Escape') {
-      togglePauseMenu();
-    }
-  });
+  // Desktop mouse controls
+  if (!isMobile) {
+    document.addEventListener('mousedown', (event) => { 
+      if (event.button === 0 && controls && controls.isLocked) { 
+        shoot(); 
+      } 
+    });
+    
+    document.addEventListener('keydown', (e) => { 
+      if (e.code === 'Digit1') { 
+        currentWeaponIndex = 0; 
+        updateWeaponDisplay();
+        switchWeaponUI(currentWeaponIndex);
+      } 
+      if (e.code === 'Digit2') { 
+        currentWeaponIndex = 1; 
+        updateWeaponDisplay();
+        switchWeaponUI(currentWeaponIndex);
+      } 
+      if (e.code === 'Digit3') { 
+        currentWeaponIndex = 2; 
+        updateWeaponDisplay();
+        switchWeaponUI(currentWeaponIndex);
+      } 
+      if (e.code === 'Digit4') { 
+        currentWeaponIndex = 3; 
+        updateWeaponDisplay();
+        switchWeaponUI(currentWeaponIndex);
+      } 
+      if (e.code === 'Digit5') { 
+        currentWeaponIndex = 4; 
+        updateWeaponDisplay();
+        switchWeaponUI(currentWeaponIndex);
+      } 
+      if (e.code === 'KeyE') { useMedikit(); } 
+      if (e.code === 'KeyR') { reloadWeapon(); }
+      if (e.code === 'KeyB') { 
+        if (!isPaused) openUpgradeShop();
+      }
+      if (e.code === 'Escape') {
+        togglePauseMenu();
+      }
+    });
+  }
+  
+  // Shop close button
+  document.getElementById('close-shop').addEventListener('click', closeUpgradeShop);
+  
+  const keys = {}; 
+  if (!isMobile) {
+    document.addEventListener("keydown", e => keys[e.code] = true); 
+    document.addEventListener("keyup", e => keys[e.code] = false);
+  }
 
   // --- PAUSE MENU BUTTON LISTENERS ---
   resumeButton.addEventListener('click', () => {
@@ -2935,46 +3613,6 @@ function initGame() {
     window.close();
   });
   
-  document.addEventListener('keydown', (e) => { 
-    if (e.code === 'Digit1') { 
-      currentWeaponIndex = 0; 
-      updateWeaponDisplay();
-      switchWeaponUI(currentWeaponIndex);
-    } 
-    if (e.code === 'Digit2') { 
-      currentWeaponIndex = 1; 
-      updateWeaponDisplay();
-      switchWeaponUI(currentWeaponIndex);
-    } 
-    if (e.code === 'Digit3') { 
-      currentWeaponIndex = 2; 
-      updateWeaponDisplay();
-      switchWeaponUI(currentWeaponIndex);
-    } 
-    if (e.code === 'Digit4') { 
-      currentWeaponIndex = 3; 
-      updateWeaponDisplay();
-      switchWeaponUI(currentWeaponIndex);
-    } 
-    if (e.code === 'Digit5') { 
-      currentWeaponIndex = 4; 
-      updateWeaponDisplay();
-      switchWeaponUI(currentWeaponIndex);
-    } 
-    if (e.code === 'KeyE') { useMedikit(); } 
-    if (e.code === 'KeyR') { reloadWeapon(); }
-    if (e.code === 'KeyB') { 
-      if (!isPaused) openUpgradeShop();
-    }
-  });
-  
-  // Shop close button
-  document.getElementById('close-shop').addEventListener('click', closeUpgradeShop);
-  
-  const keys = {}; 
-  document.addEventListener("keydown", e => keys[e.code] = true); 
-  document.addEventListener("keyup", e => keys[e.code] = false);
-
   // --- STORY PROGRESSION ---
   let currentChapter = 1;
   let demonKingFirstAppearance = false;
@@ -3013,31 +3651,86 @@ function initGame() {
   let enemySpawnTimer = 0;
   let medikitSpawnTimer = 0;
   let waveSpawnTimer = 0;
+  let mobileLookSpeed = 0.002; // Sensitivity for mobile look controls
   
   function animate() {
     requestAnimationFrame(animate);
     
     // Only run game logic if not paused
-    if (!isPaused && controls.isLocked) {
-      const moveVector = new THREE.Vector3(); 
-      const forward = new THREE.Vector3(); 
-      const right = new THREE.Vector3();
-      camera.getWorldDirection(forward); 
-      forward.y = 0; 
-      forward.normalize();
-      right.crossVectors(forward, camera.up);
-      if (keys["KeyW"]) moveVector.add(forward); 
-      if (keys["KeyS"]) moveVector.sub(forward); 
-      if (keys["KeyA"]) moveVector.sub(right); 
-      if (keys["KeyD"]) moveVector.add(right);
-      
-      if (moveVector.length() > 0) {
-        moveVector.normalize();
-        const nextPos = camera.position.clone().add(moveVector.multiplyScalar(moveSpeed));
+    if (!isPaused) {
+      // Handle mobile movement
+      if (isMobile && joystickActive) {
+        // Normalize joystick position
+        const maxDistance = 35; // Half the joystick base radius
+        const normalizedX = joystickPosition.x / maxDistance;
+        const normalizedY = joystickPosition.y / maxDistance;
         
-        // Enhanced collision detection for player
-        if (!checkCollision(nextPos.x, nextPos.z)) {
-          camera.position.copy(nextPos);
+        // Calculate movement direction
+        const moveVector = new THREE.Vector3();
+        const forward = new THREE.Vector3(); 
+        const right = new THREE.Vector3();
+        camera.getWorldDirection(forward); 
+        forward.y = 0; 
+        forward.normalize();
+        right.crossVectors(forward, camera.up);
+        
+        // Apply joystick input to movement
+        if (Math.abs(normalizedX) > 0.1 || Math.abs(normalizedY) > 0.1) {
+          moveVector.add(forward.multiplyScalar(-normalizedY));
+          moveVector.add(right.multiplyScalar(normalizedX));
+          
+          if (moveVector.length() > 0) {
+            moveVector.normalize();
+            const nextPos = camera.position.clone().add(moveVector.multiplyScalar(moveSpeed));
+            
+            // Enhanced collision detection for player
+            if (!checkCollision(nextPos.x, nextPos.z)) {
+              camera.position.copy(nextPos);
+            }
+          }
+        }
+      }
+      
+      // Handle desktop movement
+      if (!isMobile && controls && controls.isLocked) {
+        const moveVector = new THREE.Vector3(); 
+        const forward = new THREE.Vector3(); 
+        const right = new THREE.Vector3();
+        camera.getWorldDirection(forward); 
+        forward.y = 0; 
+        forward.normalize();
+        right.crossVectors(forward, camera.up);
+        if (keys["KeyW"]) moveVector.add(forward); 
+        if (keys["KeyS"]) moveVector.sub(forward); 
+        if (keys["KeyA"]) moveVector.sub(right); 
+        if (keys["KeyD"]) moveVector.add(right);
+        
+        if (moveVector.length() > 0) {
+          moveVector.normalize();
+          const nextPos = camera.position.clone().add(moveVector.multiplyScalar(moveSpeed));
+          
+          // Enhanced collision detection for player
+          if (!checkCollision(nextPos.x, nextPos.z)) {
+            camera.position.copy(nextPos);
+          }
+        }
+      }
+      
+      // Handle mobile look controls
+      if (isMobile) {
+        // Apply touch delta to camera rotation
+        if (touchDeltaX !== 0 || touchDeltaY !== 0) {
+          // Horizontal rotation (around Y axis)
+          camera.rotation.y -= touchDeltaX * mobileLookSpeed;
+          
+          // Vertical rotation (around X axis)
+          const newRotationX = camera.rotation.x - touchDeltaY * mobileLookSpeed;
+          // Clamp vertical rotation to prevent over-rotation
+          camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, newRotationX));
+          
+          // Reset touch delta after applying
+          touchDeltaX = 0;
+          touchDeltaY = 0;
         }
       }
       
@@ -3076,6 +3769,11 @@ function initGame() {
       
       for (const enemy of enemies) {
         updateEnemyAI(enemy, currentTime);
+      }
+      
+      // Handle mobile shooting
+      if (isMobile && fireButtonPressed && canShoot) {
+        shoot();
       }
       
       // Wave system
@@ -3296,7 +3994,9 @@ function initGame() {
   
   setTimeout(() => {
     loadingScreen.style.display = 'none';
-    controls.lock();
+    if (controls) {
+      controls.lock();
+    }
   }, 500);
   
   window.addEventListener('resize', () => { 
